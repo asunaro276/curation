@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require 'bundler/setup'
+require 'optparse'
+require 'dotenv/load'
+
+# Add lib to load path
+$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
+
+require 'tech_news/orchestrator'
+
+# Parse command line options
+options = {
+  dry_run: false,
+  verbose: false,
+  config: 'config/sources.yml'
+}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$PROGRAM_NAME} [options]"
+
+  opts.on('--dry-run', 'Run without making API calls or posting to Slack') do
+    options[:dry_run] = true
+  end
+
+  opts.on('-v', '--verbose', 'Enable verbose logging (DEBUG level)') do
+    options[:verbose] = true
+  end
+
+  opts.on('-c', '--config PATH', 'Path to configuration file (default: config/sources.yml)') do |path|
+    options[:config] = path
+  end
+
+  opts.on('-h', '--help', 'Display this help message') do
+    puts opts
+    exit
+  end
+end.parse!
+
+# Set log level based on verbose flag
+ENV['LOG_LEVEL'] = 'DEBUG' if options[:verbose]
+
+begin
+  # Create and run orchestrator
+  orchestrator = TechNews::Orchestrator.new(
+    config_path: options[:config],
+    dry_run: options[:dry_run]
+  )
+
+  result = orchestrator.run
+
+  # Display summary
+  puts "\n" + "=" * 50
+  puts "Tech News Curation Complete"
+  puts "=" * 50
+  puts "Duration: #{result[:duration].round(2)}s"
+  puts "Articles collected: #{result[:articles_collected]}"
+  puts "Articles summarized: #{result[:articles_summarized]}"
+  puts "Posts sent: #{result[:posts_sent]}"
+  puts "Posts failed: #{result[:posts_failed]}"
+  puts "=" * 50
+
+  exit 0
+rescue TechNews::ConfigurationError => e
+  puts "Configuration Error: #{e.message}"
+  exit 1
+rescue TechNews::Error => e
+  puts "Error: #{e.message}"
+  exit 1
+rescue StandardError => e
+  puts "Unexpected Error: #{e.message}"
+  puts e.backtrace.first(5).join("\n")
+  exit 1
+end

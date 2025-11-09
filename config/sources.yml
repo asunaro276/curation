@@ -1,0 +1,42 @@
+# Tech News Sources Configuration
+
+sources:
+  # Hacker News RSS Feed
+  - type: rss
+    name: "Hacker News"
+    url: "https://news.ycombinator.com/rss"
+    enabled: true
+
+  # GitHub Trending (Ruby)
+  - type: github_trending
+    name: "GitHub Trending Ruby"
+    language: "ruby"
+    enabled: true
+
+  # Ruby Weekly Newsletter
+  - type: rss
+    name: "Ruby Weekly"
+    url: "https://rubyweekly.com/rss"
+    enabled: false  # Example disabled source
+
+# Limits and constraints
+limits:
+  # Maximum articles to fetch per source
+  max_articles_per_source: 5
+
+  # Maximum content tokens for Claude API
+  max_content_tokens: 4000
+
+  # API request timeout (seconds)
+  api_timeout: 30
+
+  # HTTP connection timeout (seconds)
+  http_timeout: 10
+
+# Slack posting configuration
+slack:
+  # Interval between posts (seconds) - to avoid rate limiting
+  post_interval: 1
+
+  # Maximum posts per batch
+  max_posts_per_batch: 10
