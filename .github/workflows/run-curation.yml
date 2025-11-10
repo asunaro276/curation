@@ -1,9 +1,9 @@
 name: Tech News Curation
 
 on:
-  # Daily at 9 AM UTC (6 PM JST)
+  # Daily at 11 PM UTC (8 AM JST)
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 23 * * *'
 
   # Allow manual trigger
   workflow_dispatch:
