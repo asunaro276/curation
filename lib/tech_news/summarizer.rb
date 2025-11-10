@@ -96,6 +96,10 @@ module TechNews
 
       response
     rescue Faraday::Error => e
+      # Log detailed error information
+      if e.response
+        logger.error("API Error Response: #{e.response[:status]} - #{e.response[:body]}")
+      end
       handle_api_error(e)
     end
 
