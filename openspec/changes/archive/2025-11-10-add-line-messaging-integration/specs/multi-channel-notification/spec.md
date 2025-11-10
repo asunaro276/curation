@@ -3,7 +3,7 @@
 ## 概要
 Slack、LINEなど複数の通知チャネルに対して柔軟に配信できる通知管理機能。各チャネルは独立して動作し、一方のエラーが他方に影響しない。
 
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Notifier抽象化とファクトリパターン
 **ID**: REQ-MULTI-001
@@ -119,8 +119,6 @@ Orchestratorは複数のNotifierを管理し、各通知先に並行して通知
 **And**: 最も遅い通知先が識別される
 
 ---
-
-## MODIFIED Requirements
 
 ### Requirement: 既存Slack Notifierのリファクタリング
 **ID**: REQ-MULTI-005
