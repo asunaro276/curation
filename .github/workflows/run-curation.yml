@@ -34,6 +34,10 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+          LINE_GROUP_ID: ${{ secrets.LINE_GROUP_ID }}
+          ENABLED_NOTIFIERS: ${{ secrets.ENABLED_NOTIFIERS }}
           LOG_LEVEL: INFO
         run: |
           bundle exec ruby bin/run

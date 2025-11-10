@@ -7,10 +7,11 @@ require_relative 'models/article'
 require_relative 'collectors/factory'
 require_relative 'summarizer'
 require_relative 'notifier'
+require_relative 'notifiers/factory'
 
 module TechNews
   class Orchestrator
-    attr_reader :config, :logger, :collectors, :summarizer, :notifier, :dry_run
+    attr_reader :config, :logger, :collectors, :summarizer, :notifiers, :dry_run
 
     def initialize(config_path: 'config/sources.yml', dry_run: false)
       @dry_run = dry_run
@@ -22,11 +23,7 @@ module TechNews
         config: config,
         logger: logger
       )
-      @notifier = Notifier.new(
-        webhook_url: config.slack_webhook_url,
-        config: config,
-        logger: logger
-      )
+      @notifiers = Notifiers::Factory.create_all(config, logger)
 
       logger.info("Orchestrator initialized with #{collectors.length} collectors")
       logger.info("Dry run mode: #{dry_run}") if dry_run
@@ -87,16 +84,45 @@ module TechNews
     end
 
     def publish_summaries(summaries)
-      logger.info("--- Phase 3: Publishing to Slack ---")
+      logger.info("--- Phase 3: Publishing Summaries ---")
 
       if dry_run
-        logger.info("Dry run: Skipping Slack posting")
-        return { posted: summaries.length, failed: 0 }
+        logger.info("Dry run: Skipping notification posting")
+        return { notifiers: {}, total_posted: summaries.length, total_failed: 0 }
       end
 
-      result = notifier.notify_batch(summaries)
-      logger.info("Posted #{result[:posted]} summaries to Slack (#{result[:failed]} failed)")
-      result
+      if notifiers.empty?
+        logger.error("No notifiers available for publishing")
+        raise NotifierError, "No notifiers configured"
+      end
+
+      results = {}
+      total_posted = 0
+      total_failed = 0
+
+      notifiers.each do |notifier|
+        notifier_name = notifier.class.name.split('::').last.gsub('Notifier', '')
+
+        begin
+          logger.info("Publishing to #{notifier_name}...")
+          result = notifier.notify_batch(summaries)
+          results[notifier_name.downcase.to_sym] = result
+          total_posted += result[:posted]
+          total_failed += result[:failed]
+          logger.info("#{notifier_name}: Posted #{result[:posted]} (#{result[:failed]} failed)")
+        rescue StandardError => e
+          logger.error("#{notifier_name}: Publishing failed - #{e.message}")
+          results[notifier_name.downcase.to_sym] = { posted: 0, failed: summaries.length, error: e.message }
+          total_failed += summaries.length
+        end
+      end
+
+      # Raise error only if all notifiers failed
+      if total_posted == 0 && total_failed > 0
+        raise NotifierError, "All notifiers failed to publish summaries"
+      end
+
+      results.merge(total_posted: total_posted, total_failed: total_failed, notifiers: results)
     end
 
     def report_results(articles, summaries, post_result, start_time)
@@ -105,15 +131,25 @@ module TechNews
       logger.info("Duration: #{duration.round(2)}s")
       logger.info("Articles collected: #{articles.length}")
       logger.info("Articles summarized: #{summaries.length}")
-      logger.info("Posts sent: #{post_result[:posted] || 0}")
-      logger.info("Posts failed: #{post_result[:failed] || 0}")
+
+      # Report per-notifier results
+      if post_result[:notifiers]
+        post_result[:notifiers].each do |notifier_name, result|
+          next if result.is_a?(Hash) && result.empty?
+          logger.info("#{notifier_name.to_s.capitalize}: #{result[:posted] || 0} posted, #{result[:failed] || 0} failed")
+        end
+      end
+
+      logger.info("Total posts sent: #{post_result[:total_posted] || post_result[:posted] || 0}")
+      logger.info("Total posts failed: #{post_result[:total_failed] || post_result[:failed] || 0}")
 
       {
         duration: duration,
         articles_collected: articles.length,
         articles_summarized: summaries.length,
-        posts_sent: post_result[:posted] || 0,
-        posts_failed: post_result[:failed] || 0
+        posts_sent: post_result[:total_posted] || post_result[:posted] || 0,
+        posts_failed: post_result[:total_failed] || post_result[:failed] || 0,
+        notifier_results: post_result[:notifiers] || {}
       }
     end
 

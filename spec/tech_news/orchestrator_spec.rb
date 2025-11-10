@@ -50,7 +50,8 @@ RSpec.describe TechNews::Orchestrator do
       expect(orchestrator.config).to be_a(TechNews::Config)
       expect(orchestrator.collectors).not_to be_empty
       expect(orchestrator.summarizer).to be_a(TechNews::Summarizer)
-      expect(orchestrator.notifier).to be_a(TechNews::Notifier)
+      expect(orchestrator.notifiers).to be_an(Array)
+      expect(orchestrator.notifiers.first).to be_a(TechNews::Notifiers::Base)
     end
   end
 

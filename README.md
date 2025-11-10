@@ -1,6 +1,6 @@
 # Tech News Curation System
 
-技術ニュースを自動収集し、Claude APIで要約してSlackに投稿するシステム
+技術ニュースを自動収集し、Claude APIで要約してSlack/LINEに投稿するシステム
 
 ## 概要
 
@@ -8,7 +8,10 @@
 
 - 複数の技術ニュースソース（RSS、GitHub Trending等）から記事を自動収集
 - Claude API (Anthropic)を使用して記事を日本語で要約
-- 要約をSlackチャンネルに自動投稿（Block Kit形式）
+- 要約をSlack/LINEに自動投稿
+  - Slack: Block Kit形式での投稿
+  - LINE: Flex Messageでのリッチな表示
+- 複数の通知チャネルへの同時配信（Slack + LINE）
 - GitHub Actionsによる定期実行（cron）
 - エラーハンドリングとリトライ機能
 - 機密情報の自動マスキング
@@ -18,7 +21,9 @@
 - Ruby 3.0以上
 - Bundler
 - Anthropic API Key (Claude API)
-- Slack Incoming Webhook URL
+- 以下のいずれか（または両方）:
+  - Slack Incoming Webhook URL
+  - LINE Messaging API Channel Access Token
 - GitHub Actions (自動実行用)
 
 ## セットアップ
@@ -50,8 +55,17 @@ cp .env.example .env
 # Claude API (Anthropic)
 ANTHROPIC_API_KEY=sk-ant-api03-your-actual-api-key-here
 
-# Slack Webhook URL
+# 通知設定: 使用する通知先をカンマ区切りで指定 (slack, line)
+ENABLED_NOTIFIERS=slack,line
+
+# Slack設定 (slackを有効にする場合は必須)
 SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+
+# LINE設定 (lineを有効にする場合は必須)
+LINE_CHANNEL_ACCESS_TOKEN=your_line_channel_access_token_here
+LINE_USER_ID=Uxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+# または
+# LINE_GROUP_ID=Cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 # Optional settings
 LOG_LEVEL=INFO
@@ -72,6 +86,17 @@ MAX_ARTICLES_PER_SOURCE=5
 3. "Incoming Webhooks"機能を有効化
 4. "Add New Webhook to Workspace"で投稿先チャンネルを選択
 5. 生成されたWebhook URLをコピーして`SLACK_WEBHOOK_URL`に設定
+
+**LINE Messaging API:**
+1. [LINE Developers Console](https://developers.line.biz/console/)にアクセス
+2. "Create a new provider"（初回のみ）
+3. "Create a new channel" → "Messaging API"を選択
+4. チャンネル情報を入力して作成
+5. チャンネルの設定ページで以下を取得:
+   - **Channel access token**: "Messaging API" タブで発行
+   - **User ID/Group ID**: LINE公式アカウントを友だち追加後、メッセージを送信すると確認可能
+
+詳細な手順は[LINE Messaging APIドキュメント](https://developers.line.biz/ja/docs/messaging-api/)を参照してください。
 
 ### 4. ニュースソースの設定
 
@@ -130,10 +155,13 @@ sources:
 
 リポジトリの Settings → Secrets and variables → Actions で以下のSecretsを追加：
 
-| Secret名 | 説明 | 例 |
+| Secret名 | 説明 | 必須 |
 |---------|------|-----|
-| `ANTHROPIC_API_KEY` | Claude APIキー | `sk-ant-api03-...` |
-| `SLACK_WEBHOOK_URL` | Slack Webhook URL | `https://hooks.slack.com/services/...` |
+| `ANTHROPIC_API_KEY` | Claude APIキー | ✓ |
+| `SLACK_WEBHOOK_URL` | Slack Webhook URL | Slack使用時 |
+| `LINE_CHANNEL_ACCESS_TOKEN` | LINE Channel Access Token | LINE使用時 |
+| `LINE_USER_ID` または `LINE_GROUP_ID` | LINE送信先ID | LINE使用時 |
+| `ENABLED_NOTIFIERS` | 有効な通知先 (例: `slack,line`) | オプション |
 
 #### 2. ワークフローの確認
 
@@ -197,10 +225,40 @@ bundle exec rspec spec/tech_news/config_spec.rb
 
 - **Collector**: ニュースソース（RSS、GitHub Trending）からデータを収集
 - **Summarizer**: Claude APIで記事を日本語で要約
-- **Notifier**: Slackに投稿（Block Kit形式）
+- **Notifier**: 複数の通知先に配信
+  - **SlackNotifier**: Slackに投稿（Block Kit形式）
+  - **LineNotifier**: LINEに投稿（Flex Message形式）
 - **Orchestrator**: 全体のワークフローを制御
 
 詳細なアーキテクチャ設計は`openspec/changes/setup-tech-news-system/design.md`を参照してください。
+
+## 通知先の設定
+
+### Slackのみを使用する場合
+
+```env
+ENABLED_NOTIFIERS=slack
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+```
+
+### LINEのみを使用する場合
+
+```env
+ENABLED_NOTIFIERS=line
+LINE_CHANNEL_ACCESS_TOKEN=your_token_here
+LINE_USER_ID=your_user_id_here
+```
+
+### SlackとLINE両方を使用する場合
+
+```env
+ENABLED_NOTIFIERS=slack,line
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
+LINE_CHANNEL_ACCESS_TOKEN=your_token_here
+LINE_USER_ID=your_user_id_here
+```
+
+**Note**: どちらか一方の通知先が失敗しても、もう一方への配信は継続されます。
 
 ## トラブルシューティング
 
@@ -221,13 +279,31 @@ cp config/sources.example.yml config/sources.yml
 - ローカル: `.env`ファイルを作成してAPIキーを設定
 - GitHub Actions: リポジトリのSecretsに`ANTHROPIC_API_KEY`を追加
 
-### エラー: "Invalid Slack webhook URL"
+### エラー: "SLACK_WEBHOOK_URL environment variable is required when Slack notifier is enabled"
 
-**原因**: Webhook URLのフォーマットが正しくない
+**原因**: Slackを有効にしているがWebhook URLが設定されていない
 
 **解決**:
 - URLが`https://hooks.slack.com/services/`で始まっているか確認
 - Slack APIコンソールで新しいWebhook URLを生成
+- または`ENABLED_NOTIFIERS`から`slack`を削除
+
+### エラー: "LINE_CHANNEL_ACCESS_TOKEN environment variable is required when LINE notifier is enabled"
+
+**原因**: LINEを有効にしているが認証情報が設定されていない
+
+**解決**:
+- LINE Developers Consoleでチャンネルアクセストークンを発行
+- `LINE_USER_ID`または`LINE_GROUP_ID`も設定する
+- または`ENABLED_NOTIFIERS`から`line`を削除
+
+### エラー: "No notifiers configured"
+
+**原因**: 有効な通知先が1つも設定されていない
+
+**解決**:
+- `ENABLED_NOTIFIERS`を設定（例: `slack`、`line`、または`slack,line`）
+- 対応する認証情報（WebhookURL、アクセストークン等）も設定する
 
 ### エラー: "API rate limit exceeded"
 
@@ -293,7 +369,11 @@ cp config/sources.example.yml config/sources.yml
 
 ### Slackメッセージフォーマットのカスタマイズ
 
-`lib/tech_news/notifier.rb`の`format_message`メソッドを編集してSlack Block Kitフォーマットをカスタマイズできます。
+`lib/tech_news/notifiers/slack_notifier.rb`の`format_message`メソッドを編集してSlack Block Kitフォーマットをカスタマイズできます。
+
+### LINEメッセージフォーマットのカスタマイズ
+
+`lib/tech_news/notifiers/line_notifier.rb`の`build_flex_message`メソッドを編集してLINE Flex Messageフォーマットをカスタマイズできます。
 
 ## 開発
 

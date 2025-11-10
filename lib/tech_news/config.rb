@@ -7,7 +7,8 @@ module TechNews
     class ConfigurationError < StandardError; end
 
     attr_reader :sources, :limits, :slack, :anthropic_api_key, :slack_webhook_url,
-                :log_level, :claude_model
+                :log_level, :claude_model, :line_channel_access_token, :line_target_id,
+                :enabled_notifiers
 
     def initialize(config_path: 'config/sources.yml')
       @config_path = config_path
@@ -64,15 +65,43 @@ module TechNews
       @slack_webhook_url = ENV['SLACK_WEBHOOK_URL']
       @log_level = ENV['LOG_LEVEL'] || 'INFO'
       @claude_model = ENV['CLAUDE_MODEL'] || 'claude-3-5-sonnet-20241022'
+
+      # LINE settings
+      @line_channel_access_token = ENV['LINE_CHANNEL_ACCESS_TOKEN']
+      @line_target_id = ENV['LINE_USER_ID'] || ENV['LINE_GROUP_ID']
+
+      # Enabled notifiers (default: slack only for backward compatibility)
+      notifiers_env = ENV['ENABLED_NOTIFIERS'] || 'slack'
+      @enabled_notifiers = notifiers_env.split(',').map(&:strip).reject(&:empty?)
     end
 
     def validate!
       errors = []
 
       errors << "ANTHROPIC_API_KEY environment variable is required" if @anthropic_api_key.nil? || @anthropic_api_key.empty?
-      errors << "SLACK_WEBHOOK_URL environment variable is required" if @slack_webhook_url.nil? || @slack_webhook_url.empty?
       errors << "No sources defined in configuration" if @sources.empty?
       errors << "No enabled sources found" if enabled_sources.empty?
+
+      # Validate enabled notifiers
+      if @enabled_notifiers.empty?
+        errors << "At least one notifier must be enabled (ENABLED_NOTIFIERS environment variable)"
+      end
+
+      # Validate notifier-specific requirements
+      if @enabled_notifiers.include?('slack')
+        if @slack_webhook_url.nil? || @slack_webhook_url.empty?
+          errors << "SLACK_WEBHOOK_URL environment variable is required when Slack notifier is enabled"
+        end
+      end
+
+      if @enabled_notifiers.include?('line')
+        if @line_channel_access_token.nil? || @line_channel_access_token.empty?
+          errors << "LINE_CHANNEL_ACCESS_TOKEN environment variable is required when LINE notifier is enabled"
+        end
+        if @line_target_id.nil? || @line_target_id.empty?
+          errors << "LINE_USER_ID or LINE_GROUP_ID environment variable is required when LINE notifier is enabled"
+        end
+      end
 
       # Validate source structure
       @sources.each_with_index do |source, index|
