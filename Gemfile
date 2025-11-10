@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 ruby ">= 3.0.0"
 
-gem "anthropic", "~> 0.1"        # Claude API client
+gem "ruby-anthropic", "~> 0.4.2"        # Claude API client
 gem "faraday", "~> 2.7"           # HTTP client
 gem "faraday-retry", "~> 2.2"    # HTTP retry middleware
 gem "nokogiri", "~> 1.15"         # HTML/XML parsing

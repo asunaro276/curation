@@ -3,10 +3,6 @@ GEM
   specs:
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
-    anthropic (0.4.1)
-      event_stream_parser (>= 0.3.0, < 2.0.0)
-      faraday (>= 1)
-      faraday-multipart (>= 1)
     ast (2.4.3)
     bigdecimal (3.3.1)
     crack (1.0.1)
@@ -88,6 +84,10 @@ GEM
     rubocop-ast (1.48.0)
       parser (>= 3.3.7.2)
       prism (~> 1.4)
+    ruby-anthropic (0.4.2)
+      event_stream_parser (>= 0.3.0, < 2.0.0)
+      faraday (>= 1)
+      faraday-multipart (>= 1)
     ruby-progressbar (1.13.0)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
@@ -109,7 +109,6 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
-  anthropic (~> 0.1)
   dotenv (~> 2.8)
   faraday (~> 2.7)
   faraday-retry (~> 2.2)
@@ -117,6 +116,7 @@ DEPENDENCIES
   rspec (~> 3.12)
   rss
   rubocop (~> 1.56)
+  ruby-anthropic (~> 0.4.2)
   webmock (~> 3.18)
 
 RUBY VERSION
