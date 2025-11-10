@@ -160,11 +160,23 @@ cp config/sources.example.yml config/sources.yml
 ## GitHub Actions
 
 ### ワークフロー (`.github/workflows/run-curation.yml`)
-- 毎日9:00 UTC（18:00 JST）に自動実行
+- 毎日23:00 UTC（8:00 JST）に自動実行
 - 手動実行も可能（workflow_dispatch）
 - 必要なシークレット:
   - `ANTHROPIC_API_KEY`: Claude APIキー
   - `SLACK_WEBHOOK_URL`: Slack Webhook URL
+
+### 依存関係キャッシュ
+- **キャッシュ方式**: actions/cache@v4 を使用した明示的なキャッシュ管理
+- **キャッシュキー**: `${{ runner.os }}-ruby-3.2-gems-${{ hashFiles('**/Gemfile.lock') }}`
+- **キャッシュパス**: `vendor/bundle`
+- **動作**:
+  - Gemfile.lockが変更されていない場合、キャッシュがヒットしてbundle installがスキップされる
+  - Gemfile.lockが変更された場合、新規にbundle installが実行され、キャッシュが更新される
+  - キャッシュヒット/ミス状態はワークフローログで確認可能
+- **トラブルシューティング**:
+  - キャッシュを強制的にクリアしたい場合は、GitHubのActionsタブからキャッシュを削除
+  - ローカルで依存関係を変更した場合は、必ずGemfile.lockをコミット
 
 ---
 
