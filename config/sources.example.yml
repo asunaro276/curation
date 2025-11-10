@@ -1,0 +1,65 @@
+# Tech News Sources Configuration
+# Copy this file to config/sources.yml and customize as needed
+
+sources:
+  # RSS Feed Example
+  - type: rss
+    name: "Hacker News"
+    url: "https://news.ycombinator.com/rss"
+    enabled: true
+
+  # GitHub Trending Example (All languages)
+  - type: github_trending
+    name: "GitHub Trending"
+    enabled: true
+
+  # GitHub Trending Example (Specific language)
+  - type: github_trending
+    name: "GitHub Trending Ruby"
+    language: "ruby"
+    enabled: true
+
+  # Additional RSS Feed Examples
+  - type: rss
+    name: "Ruby Weekly"
+    url: "https://rubyweekly.com/rss"
+    enabled: false
+
+  - type: rss
+    name: "JavaScript Weekly"
+    url: "https://javascriptweekly.com/rss"
+    enabled: false
+
+  - type: rss
+    name: "Dev.to - Ruby"
+    url: "https://dev.to/feed/tag/ruby"
+    enabled: false
+
+# Limits and constraints
+limits:
+  # Maximum articles to fetch per source (to control API costs)
+  max_articles_per_source: 5
+
+  # Maximum content tokens for Claude API (to control costs)
+  # Rough estimate: 1 token ≈ 3-4 characters for Japanese
+  max_content_tokens: 4000
+
+  # API request timeout (seconds)
+  api_timeout: 30
+
+  # HTTP connection timeout (seconds)
+  http_timeout: 10
+
+# Slack posting configuration
+slack:
+  # Interval between posts (seconds) - to avoid rate limiting
+  post_interval: 1
+
+  # Maximum posts per batch
+  max_posts_per_batch: 10
+
+# Tips:
+# - Start with a small number of sources and max_articles_per_source to control costs
+# - Enable sources one at a time to verify they work correctly
+# - Adjust max_content_tokens based on your Anthropic API usage limits
+# - The cron schedule in .github/workflows/run-curation.yml controls execution frequency

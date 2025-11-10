@@ -1,0 +1,45 @@
+name: Tech News Curation
+
+on:
+  # Daily at 9 AM UTC (6 PM JST)
+  schedule:
+    - cron: '0 9 * * *'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  curate-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true  # Automatically runs bundle install and caches gems
+
+      - name: Verify configuration
+        run: |
+          if [ ! -f config/sources.yml ]; then
+            echo "Error: config/sources.yml not found"
+            exit 1
+          fi
+
+      - name: Run tech news curation
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          LOG_LEVEL: INFO
+        run: |
+          bundle exec ruby bin/run
+
+      - name: Report status on failure
+        if: failure()
+        run: |
+          echo "Tech news curation failed"
+          echo "Check the logs above for details"
