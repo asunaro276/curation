@@ -1,23 +1,120 @@
 # Tech News Sources Configuration
 
 sources:
-  # Hacker News RSS Feed
-  - type: rss
-    name: "Hacker News"
-    url: "https://news.ycombinator.com/rss"
-    enabled: true
-
-  # GitHub Trending (Ruby)
   - type: github_trending
     name: "GitHub Trending Ruby"
     language: "ruby"
-    enabled: true
+    enabled: false
 
-  # Ruby Weekly Newsletter
   - type: rss
     name: "Ruby Weekly"
     url: "https://rubyweekly.com/rss"
     enabled: false  # Example disabled source
+
+  - type: rss
+    name: "Amazon Web Services ブログ"
+    url: "http://feeds.feedburner.com/AmazonWebServicesBlogJp?format=xml"
+    enabled: false  # Example disabled source
+
+  - type: rss
+    name: "Developers.IO（クラスメソッド）"
+    url: "http://dev.classmethod.jp/feed/"
+    enabled: true # Example disabled source
+
+  - type: rss
+    name: "Mercari Engineering Blog"
+    url: "http://tech.mercari.com/rss"
+    enabled: false
+
+  - type: rss
+    name: "さくらのナレッジ"
+    url: "http://knowledge.sakura.ad.jp/feed/"
+    enabled: false
+
+  - type: rss
+    name: "インフラエンジニアWay（ハートビーツ）"
+    url: "http://heartbeats.jp/hbblog/atom.xml"
+    enabled: false
+
+  - type: rss
+    name: "DSAS開発者の部屋（KLab）"
+    url: "http://dsas.blog.klab.org/index.rdf"
+    enabled: false
+
+  - type: rss
+    name: "VOYAGE GROUP techlog"
+    url: "http://techlog.voyagegroup.com/rss"
+    enabled: false
+
+  - type: rss
+    name: "Google Japan Developer Relations Blog"
+    url: "http://feeds.feedburner.com/GoogleJapanDeveloperRelationsBlog?format=xml"
+    enabled: false
+
+  - type: rss
+    name: "LINE Engineers' Blog"
+    url: "https://engineering.linecorp.com/ja/feed/"
+    enabled: false
+
+  - type: rss
+    name: "DeNA Engineers' Blog"
+    url: "https://engineer.dena.com/index.xml"
+    enabled: false
+
+  - type: rss
+    name: "GREE Engineer's Blog"
+    url: "http://labs.gree.jp/blog/feed/"
+    enabled: false
+
+  - type: rss
+    name: "CyberAgent Developers Blog"
+    url: "https://developers.cyberagent.co.jp/blog/feed/"
+    enabled: false
+
+  - type: rss
+    name: "クックパッド開発者ブログ"
+    url: "http://techlife.cookpad.com/rss"
+    enabled: false
+
+  - type: rss
+    name: "はてな開発者ブログ"
+    url: "http://developer.hatenastaff.com/rss"
+    enabled: false
+
+  - type: rss
+    name: "mixi developers"
+    url: "https://medium.com/feed/mixi-developers"
+    enabled: false
+
+  - type: rss
+    name: "Septeni EngineerBlog"
+    url: "http://labs.septeni.co.jp/rss"
+    enabled: false
+
+  - type: rss
+    name: "GMO MEDIA CREATOR BLOG"
+    url: "https://blog.gmo.media/feed/"
+    enabled: false
+
+  - type: rss
+    name: "ヌーラボ"
+    url: "http://nulab-inc.com/ja/feed/"
+    enabled: false
+
+  - type: rss
+    name: "シナジーマーケティング（TECH SCORE）"
+    url: "http://www.techscore.com/blog/feed/"
+    enabled: false
+
+  - type: rss
+    name: "Yahoo! JAPAN Tech Blog"
+    url: "http://techblog.yahoo.co.jp/atom.xml"
+    enabled: false
+
+  - type: rss
+    name: "Wantedly Engineer Blog"
+    url: "http://engineer.wantedly.com/feed"
+    enabled: false
 
 # Limits and constraints
 limits:
