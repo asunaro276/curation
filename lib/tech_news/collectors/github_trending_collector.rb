@@ -11,7 +11,7 @@ module TechNews
 
       attr_reader :language
 
-      def initialize(name:, language: nil, config:, logger:)
+      def initialize(name:, config:, logger:, language: nil)
         super(name: name, config: config, logger: logger)
         @language = language
       end
@@ -44,12 +44,10 @@ module TechNews
         repos = doc.css('article.Box-row')
 
         repos.map do |repo|
-          begin
-            extract_article_from_repo(repo)
-          rescue ArgumentError => e
-            logger.warn("#{name}: Skipping invalid repository - #{e.message}")
-            nil
-          end
+          extract_article_from_repo(repo)
+        rescue ArgumentError => e
+          logger.warn("#{name}: Skipping invalid repository - #{e.message}")
+          nil
         end.compact
       end
 

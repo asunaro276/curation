@@ -8,7 +8,7 @@ module TechNews
     class Factory
       def self.create_from_config(source_config, config, logger)
         type = source_config['type']
-        name = source_config['name']
+        source_config['name']
 
         case type
         when 'rss'
@@ -22,16 +22,12 @@ module TechNews
 
       def self.create_all_from_config(config, logger)
         config.enabled_sources.map do |source_config|
-          begin
-            create_from_config(source_config, config, logger)
-          rescue ConfigurationError => e
-            logger.error("Failed to create collector: #{e.message}")
-            nil
-          end
+          create_from_config(source_config, config, logger)
+        rescue ConfigurationError => e
+          logger.error("Failed to create collector: #{e.message}")
+          nil
         end.compact
       end
-
-      private
 
       def self.create_rss_collector(source_config, config, logger)
         url = source_config['url']

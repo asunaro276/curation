@@ -5,9 +5,8 @@ require 'spec_helper'
 RSpec.describe TechNews::Collectors::RssCollector do
   let(:config) do
     double('Config',
-      http_timeout: 10,
-      max_articles_per_source: 5
-    )
+           http_timeout: 10,
+           max_articles_per_source: 5)
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
 
@@ -48,14 +47,14 @@ RSpec.describe TechNews::Collectors::RssCollector do
     end
 
     it 'raises error with invalid URL' do
-      expect {
+      expect do
         described_class.new(
           name: 'Test RSS',
           url: 'not-a-url',
           config: config,
           logger: logger
         )
-      }.to raise_error(TechNews::ConfigurationError, /Invalid RSS URL/)
+      end.to raise_error(TechNews::ConfigurationError, /Invalid RSS URL/)
     end
   end
 
@@ -139,9 +138,9 @@ RSpec.describe TechNews::Collectors::RssCollector do
         logger: logger
       )
 
-      expect {
+      expect do
         collector.parse('invalid xml')
-      }.to raise_error(TechNews::ParseError)
+      end.to raise_error(TechNews::ParseError)
     end
   end
 end

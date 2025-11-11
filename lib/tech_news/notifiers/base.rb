@@ -47,18 +47,16 @@ module TechNews
           failed_count = 0
 
           summaries.each_with_index do |summary, index|
-            begin
-              notify(summary)
-              posted_count += 1
-              logger.debug("#{notifier_name}: Progress #{index + 1}/#{summaries.length} posted")
+            notify(summary)
+            posted_count += 1
+            logger.debug("#{notifier_name}: Progress #{index + 1}/#{summaries.length} posted")
 
-              # Wait between posts to avoid rate limiting
-              sleep(interval) if index < summaries.length - 1
-            rescue StandardError => e
-              # Log error but continue with other posts
-              logger.error("#{notifier_name}: Batch notification failed for post #{index + 1}: #{e.message}")
-              failed_count += 1
-            end
+            # Wait between posts to avoid rate limiting
+            sleep(interval) if index < summaries.length - 1
+          rescue StandardError => e
+            # Log error but continue with other posts
+            logger.error("#{notifier_name}: Batch notification failed for post #{index + 1}: #{e.message}")
+            failed_count += 1
           end
 
           logger.info("#{notifier_name}: Batch notification complete: #{posted_count} succeeded, #{failed_count} failed")
@@ -99,14 +97,14 @@ module TechNews
           yield
         rescue Faraday::Error => e
           retries += 1
-          if retries < max_retries
-            wait_time = RETRY_WAIT * (2 ** (retries - 1)) # Exponential backoff
-            logger.warn("#{notifier_name}: Request failed, retrying in #{wait_time}s (attempt #{retries}/#{max_retries})")
-            sleep(wait_time)
-            retry
-          else
+          unless retries < max_retries
             raise WebhookError, "#{notifier_name}: Failed after #{max_retries} retries: #{e.message}"
           end
+
+          wait_time = RETRY_WAIT * (2**(retries - 1)) # Exponential backoff
+          logger.warn("#{notifier_name}: Request failed, retrying in #{wait_time}s (attempt #{retries}/#{max_retries})")
+          sleep(wait_time)
+          retry
         end
       end
 

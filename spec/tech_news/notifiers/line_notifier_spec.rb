@@ -10,8 +10,7 @@ require_relative '../../../lib/tech_news/models/article'
 RSpec.describe TechNews::Notifiers::LineNotifier do
   let(:config) do
     double('Config',
-      enabled_notifiers: ['line']
-    )
+           enabled_notifiers: ['line'])
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
   let(:channel_access_token) { 'test_channel_access_token' }
@@ -48,25 +47,25 @@ RSpec.describe TechNews::Notifiers::LineNotifier do
     end
 
     it 'raises error with missing channel access token' do
-      expect {
+      expect do
         described_class.new(
           channel_access_token: '',
           target_id: target_id,
           config: config,
           logger: logger
         )
-      }.to raise_error(TechNews::ConfigurationError, /Channel Access Token/)
+      end.to raise_error(TechNews::ConfigurationError, /Channel Access Token/)
     end
 
     it 'raises error with missing target ID' do
-      expect {
+      expect do
         described_class.new(
           channel_access_token: channel_access_token,
           target_id: '',
           config: config,
           logger: logger
         )
-      }.to raise_error(TechNews::ConfigurationError, /Target ID/)
+      end.to raise_error(TechNews::ConfigurationError, /Target ID/)
     end
   end
 
@@ -187,9 +186,9 @@ RSpec.describe TechNews::Notifiers::LineNotifier do
         logger: logger
       )
 
-      expect {
+      expect do
         notifier.notify(summary)
-      }.to raise_error(TechNews::RateLimitError)
+      end.to raise_error(TechNews::RateLimitError)
     end
 
     it 'retries on network errors' do
@@ -197,11 +196,9 @@ RSpec.describe TechNews::Notifiers::LineNotifier do
       stub_request(:post, line_api_url)
         .to_return do
           call_count += 1
-          if call_count < 3
-            raise Faraday::ConnectionFailed.new('Connection failed')
-          else
-            { status: 200, body: '{}' }
-          end
+          raise Faraday::ConnectionFailed.new('Connection failed') if call_count < 3
+
+          { status: 200, body: '{}' }
         end
 
       notifier = described_class.new(
@@ -227,9 +224,9 @@ RSpec.describe TechNews::Notifiers::LineNotifier do
         logger: logger
       )
 
-      expect {
+      expect do
         notifier.notify(summary)
-      }.to raise_error(TechNews::WebhookError, /401/)
+      end.to raise_error(TechNews::WebhookError, /401/)
     end
   end
 

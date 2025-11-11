@@ -7,12 +7,12 @@ RSpec.describe TechNews::Orchestrator do
   let(:config_file) do
     file = Tempfile.new(['sources', '.yml'])
     file.write(YAML.dump({
-      'sources' => [
-        { 'type' => 'rss', 'name' => 'Test RSS', 'url' => 'https://example.com/rss', 'enabled' => true }
-      ],
-      'limits' => { 'max_articles_per_source' => 5 },
-      'slack' => { 'post_interval' => 0.1 }
-    }))
+                           'sources' => [
+                             { 'type' => 'rss', 'name' => 'Test RSS', 'url' => 'https://example.com/rss', 'enabled' => true }
+                           ],
+                           'limits' => { 'max_articles_per_source' => 5 },
+                           'slack' => { 'post_interval' => 0.1 }
+                         }))
     file.rewind
     file
   end
@@ -96,9 +96,9 @@ RSpec.describe TechNews::Orchestrator do
       # Simulate an error by stubbing collect_articles to raise
       allow(orchestrator).to receive(:collect_articles).and_raise(StandardError, 'Test error')
 
-      expect {
+      expect do
         orchestrator.run
-      }.to raise_error(StandardError, 'Test error')
+      end.to raise_error(StandardError, 'Test error')
     end
   end
 end

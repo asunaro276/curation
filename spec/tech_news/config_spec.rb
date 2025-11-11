@@ -24,7 +24,7 @@ RSpec.describe TechNews::Config do
   before do
     ENV['ANTHROPIC_API_KEY'] = 'test_api_key'
     ENV['SLACK_WEBHOOK_URL'] = 'https://hooks.slack.com/test'
-    ENV['ENABLED_NOTIFIERS'] = 'slack'  # Default to slack for backward compatibility
+    ENV['ENABLED_NOTIFIERS'] = 'slack' # Default to slack for backward compatibility
     ENV.delete('LINE_CHANNEL_ACCESS_TOKEN')
     ENV.delete('LINE_USER_ID')
     ENV.delete('LINE_GROUP_ID')
@@ -48,31 +48,31 @@ RSpec.describe TechNews::Config do
     end
 
     it 'raises error when config file not found' do
-      expect {
+      expect do
         TechNews::Config.new(config_path: 'nonexistent.yml')
-      }.to raise_error(TechNews::Config::ConfigurationError, /not found/)
+      end.to raise_error(TechNews::Config::ConfigurationError, /not found/)
     end
 
     it 'raises error when ANTHROPIC_API_KEY is missing' do
       ENV['ANTHROPIC_API_KEY'] = ''
-      expect {
+      expect do
         TechNews::Config.new(config_path: config_file.path)
-      }.to raise_error(TechNews::Config::ConfigurationError, /ANTHROPIC_API_KEY/)
+      end.to raise_error(TechNews::Config::ConfigurationError, /ANTHROPIC_API_KEY/)
     end
 
     it 'raises error when SLACK_WEBHOOK_URL is missing and Slack is enabled' do
       ENV['SLACK_WEBHOOK_URL'] = ''
       ENV['ENABLED_NOTIFIERS'] = 'slack'
-      expect {
+      expect do
         TechNews::Config.new(config_path: config_file.path)
-      }.to raise_error(TechNews::Config::ConfigurationError, /SLACK_WEBHOOK_URL/)
+      end.to raise_error(TechNews::Config::ConfigurationError, /SLACK_WEBHOOK_URL/)
     end
 
     it 'loads LINE configuration when provided' do
       ENV['LINE_CHANNEL_ACCESS_TOKEN'] = 'test_line_token'
       ENV['LINE_USER_ID'] = 'U123456'
       ENV['ENABLED_NOTIFIERS'] = 'line'
-      ENV['SLACK_WEBHOOK_URL'] = ''  # Not required when only LINE is enabled
+      ENV['SLACK_WEBHOOK_URL'] = '' # Not required when only LINE is enabled
 
       config = TechNews::Config.new(config_path: config_file.path)
       expect(config.line_channel_access_token).to eq('test_line_token')
@@ -83,18 +83,18 @@ RSpec.describe TechNews::Config do
     it 'raises error when LINE_CHANNEL_ACCESS_TOKEN is missing and LINE is enabled' do
       ENV['ENABLED_NOTIFIERS'] = 'line'
       ENV['SLACK_WEBHOOK_URL'] = ''
-      expect {
+      expect do
         TechNews::Config.new(config_path: config_file.path)
-      }.to raise_error(TechNews::Config::ConfigurationError, /LINE_CHANNEL_ACCESS_TOKEN/)
+      end.to raise_error(TechNews::Config::ConfigurationError, /LINE_CHANNEL_ACCESS_TOKEN/)
     end
 
     it 'raises error when LINE_USER_ID/LINE_GROUP_ID is missing and LINE is enabled' do
       ENV['ENABLED_NOTIFIERS'] = 'line'
       ENV['LINE_CHANNEL_ACCESS_TOKEN'] = 'test_line_token'
       ENV['SLACK_WEBHOOK_URL'] = ''
-      expect {
+      expect do
         TechNews::Config.new(config_path: config_file.path)
-      }.to raise_error(TechNews::Config::ConfigurationError, /LINE_USER_ID or LINE_GROUP_ID/)
+      end.to raise_error(TechNews::Config::ConfigurationError, /LINE_USER_ID or LINE_GROUP_ID/)
     end
 
     it 'supports multiple notifiers' do
@@ -103,7 +103,7 @@ RSpec.describe TechNews::Config do
       ENV['ENABLED_NOTIFIERS'] = 'slack,line'
 
       config = TechNews::Config.new(config_path: config_file.path)
-      expect(config.enabled_notifiers).to eq(['slack', 'line'])
+      expect(config.enabled_notifiers).to eq(%w[slack line])
     end
 
     it 'defaults to slack when ENABLED_NOTIFIERS is not set' do
@@ -134,6 +134,72 @@ RSpec.describe TechNews::Config do
 
     it 'returns slack_post_interval' do
       expect(config.slack_post_interval).to eq(1)
+    end
+  end
+
+  describe 'summarization_template' do
+    context 'テンプレートが指定されていない場合' do
+      it 'デフォルトで"default"を返す' do
+        config = TechNews::Config.new(config_path: config_file.path)
+        expect(config.summarization_template).to eq('default')
+      end
+    end
+
+    context 'テンプレートが指定されている場合' do
+      let(:config_with_template) do
+        valid_config.merge({
+                             'summarization' => { 'template' => 'concise' }
+                           })
+      end
+
+      let(:config_file_with_template) do
+        file = Tempfile.new(['sources', '.yml'])
+        file.write(YAML.dump(config_with_template))
+        file.rewind
+        file
+      end
+
+      after do
+        config_file_with_template.close
+        config_file_with_template.unlink
+      end
+
+      it '指定されたテンプレートを返す' do
+        config = TechNews::Config.new(config_path: config_file_with_template.path)
+        expect(config.summarization_template).to eq('concise')
+      end
+    end
+
+    context '無効なテンプレート名が指定されている場合' do
+      let(:config_with_invalid_template) do
+        valid_config.merge({
+                             'summarization' => { 'template' => 'invalid_template' }
+                           })
+      end
+
+      let(:config_file_with_invalid_template) do
+        file = Tempfile.new(['sources', '.yml'])
+        file.write(YAML.dump(config_with_invalid_template))
+        file.rewind
+        file
+      end
+
+      after do
+        config_file_with_invalid_template.close
+        config_file_with_invalid_template.unlink
+      end
+
+      it 'ConfigurationErrorを発生させる' do
+        expect do
+          TechNews::Config.new(config_path: config_file_with_invalid_template.path)
+        end.to raise_error(TechNews::Config::ConfigurationError, /Invalid summarization template/)
+      end
+
+      it 'エラーメッセージに利用可能なテンプレートを含む' do
+        expect do
+          TechNews::Config.new(config_path: config_file_with_invalid_template.path)
+        end.to raise_error(TechNews::Config::ConfigurationError, /Available:/)
+      end
     end
   end
 end

@@ -43,10 +43,10 @@ module TechNews
 
       def validate!
         errors = []
-        errors << "title is required" if title.nil? || title.empty?
-        errors << "url is required" if url.nil? || url.empty?
-        errors << "url is invalid" if url && !valid_url?(url)
-        errors << "source is required" if source.nil? || source.empty?
+        errors << 'title is required' if title.nil? || title.empty?
+        errors << 'url is required' if url.nil? || url.empty?
+        errors << 'url is invalid' if url && !valid_url?(url)
+        errors << 'source is required' if source.nil? || source.empty?
 
         raise ArgumentError, "Article validation failed: #{errors.join(', ')}" unless errors.empty?
       end

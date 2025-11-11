@@ -125,8 +125,13 @@ cp config/sources.example.yml config/sources.yml
 
 #### Summarizer (`lib/tech_news/summarizer.rb`)
 - Claude APIを使用して記事を日本語で要約
-- プロンプトカスタマイズは`#build_prompt`メソッド
+- テンプレートシステムで要約スタイルをカスタマイズ可能
 - レート制限とリトライ機能を実装
+
+#### SummarizerTemplates (`lib/tech_news/summarizer_templates.rb`)
+- 事前定義された要約テンプレートを管理
+- 5種類のテンプレート（default, concise, detailed, technical, bullet_points）
+- テンプレート取得と検証メソッドを提供
 
 #### Notifier (`lib/tech_news/notifier.rb`)
 - Slack Webhook経由でメッセージ投稿
@@ -197,6 +202,22 @@ cp config/sources.example.yml config/sources.yml
 - `LOG_LEVEL`: ログレベル（DEBUG, INFO, WARN, ERROR）デフォルト: INFO
 - `CLAUDE_MODEL`: 使用するClaudeモデル（デフォルト: claude-3-5-sonnet-20241022）
 - `MAX_ARTICLES_PER_SOURCE`: ソースあたりの最大記事数（デフォルト: 5）
+
+### 要約テンプレート設定
+
+`config/sources.yml` の `summarization.template` で要約スタイルを選択できます：
+
+- **default**: 標準形式（2-3文の要約 + 最大3点の箇条書き）
+- **concise**: 超簡潔版（1-2文のみ）
+- **detailed**: 詳細版（4-5文の要約 + 5点程度の箇条書き）
+- **technical**: 技術特化版（アーキテクチャ、技術スタック、パフォーマンスなどに焦点）
+- **bullet_points**: 箇条書きのみ（5-7点）
+
+例：
+```yaml
+summarization:
+  template: technical  # 技術特化版を使用
+```
 
 ---
 

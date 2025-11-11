@@ -16,16 +16,14 @@ module TechNews
           enabled_types = config.enabled_notifiers
 
           enabled_types.each do |type|
-            begin
-              notifier = create(type, config, logger)
-              notifiers << notifier if notifier
-            rescue StandardError => e
-              logger.warn("Failed to initialize #{type} notifier: #{e.message}")
-            end
+            notifier = create(type, config, logger)
+            notifiers << notifier if notifier
+          rescue StandardError => e
+            logger.warn("Failed to initialize #{type} notifier: #{e.message}")
           end
 
           if notifiers.empty?
-            logger.warn("No notifiers were successfully initialized")
+            logger.warn('No notifiers were successfully initialized')
           else
             logger.info("Initialized notifiers: #{notifiers.map { |n| n.class.name.split('::').last }.join(', ')}")
           end

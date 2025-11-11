@@ -5,10 +5,10 @@ require 'spec_helper'
 RSpec.describe TechNews::Summarizer do
   let(:config) do
     double('Config',
-      claude_model: 'claude-3-5-sonnet-20241022',
-      max_content_tokens: 4000,
-      api_timeout: 30
-    )
+           claude_model: 'claude-3-5-sonnet-20241022',
+           max_content_tokens: 4000,
+           api_timeout: 30,
+           summarization_template: 'default')
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
   let(:api_key) { 'test_api_key' }
@@ -35,6 +35,9 @@ RSpec.describe TechNews::Summarizer do
 
   describe '#initialize' do
     it 'creates summarizer with API key' do
+      client = double('Anthropic::Client')
+      allow(Anthropic::Client).to receive(:new).and_return(client)
+
       summarizer = described_class.new(
         api_key: api_key,
         config: config,
@@ -42,9 +45,13 @@ RSpec.describe TechNews::Summarizer do
       )
       expect(summarizer.api_key).to eq(api_key)
       expect(summarizer.model).to eq('claude-3-5-sonnet-20241022')
+      expect(summarizer.template[:name]).to eq('default')
     end
 
     it 'allows custom model override' do
+      client = double('Anthropic::Client')
+      allow(Anthropic::Client).to receive(:new).and_return(client)
+
       summarizer = described_class.new(
         api_key: api_key,
         config: config,
@@ -57,16 +64,16 @@ RSpec.describe TechNews::Summarizer do
 
   describe '#summarize' do
     it 'summarizes article successfully' do
+      # Mock the Anthropic client before initialization
+      client = double('Anthropic::Client')
+      allow(Anthropic::Client).to receive(:new).and_return(client)
+      allow(client).to receive(:messages).and_return(mock_api_response)
+
       summarizer = described_class.new(
         api_key: api_key,
         config: config,
         logger: logger
       )
-
-      # Mock the Anthropic client
-      client = double('Anthropic::Client')
-      allow(Anthropic::Client).to receive(:new).and_return(client)
-      allow(client).to receive(:messages).and_return(mock_api_response)
 
       result = summarizer.summarize(article)
 
@@ -77,47 +84,50 @@ RSpec.describe TechNews::Summarizer do
     end
 
     it 'raises SummarizerError on API failure' do
-      summarizer = described_class.new(
-        api_key: api_key,
-        config: config,
-        logger: logger
-      )
-
       client = double('Anthropic::Client')
       allow(Anthropic::Client).to receive(:new).and_return(client)
       allow(client).to receive(:messages).and_raise(Faraday::Error.new('API error'))
 
-      expect {
-        summarizer.summarize(article)
-      }.to raise_error(TechNews::SummarizerError)
-    end
-
-    it 'handles rate limit errors' do
       summarizer = described_class.new(
         api_key: api_key,
         config: config,
         logger: logger
       )
 
+      expect do
+        summarizer.summarize(article)
+      end.to raise_error(TechNews::SummarizerError)
+    end
+
+    it 'handles rate limit errors' do
       client = double('Anthropic::Client')
       allow(Anthropic::Client).to receive(:new).and_return(client)
       allow(client).to receive(:messages).and_raise(Faraday::TooManyRequestsError.new('Rate limited'))
 
-      expect {
+      summarizer = described_class.new(
+        api_key: api_key,
+        config: config,
+        logger: logger
+      )
+
+      expect do
         summarizer.summarize(article)
-      }.to raise_error(TechNews::RateLimitError)
+      end.to raise_error(TechNews::RateLimitError)
     end
   end
 
   describe '#truncate_content' do
     it 'truncates long content' do
+      client = double('Anthropic::Client')
+      allow(Anthropic::Client).to receive(:new).and_return(client)
+
       summarizer = described_class.new(
         api_key: api_key,
         config: config,
         logger: logger
       )
 
-      long_text = 'a' * 20000
+      long_text = 'a' * 20_000
       truncated = summarizer.send(:truncate_content, long_text, max_tokens: 1000)
 
       expect(truncated.length).to be < long_text.length
@@ -125,6 +135,9 @@ RSpec.describe TechNews::Summarizer do
     end
 
     it 'does not truncate short content' do
+      client = double('Anthropic::Client')
+      allow(Anthropic::Client).to receive(:new).and_return(client)
+
       summarizer = described_class.new(
         api_key: api_key,
         config: config,

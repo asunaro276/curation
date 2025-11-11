@@ -58,7 +58,7 @@ RSpec.describe TechNews::Notifiers::Factory do
 
     context 'when both Slack and LINE are enabled' do
       before do
-        allow(config).to receive(:enabled_notifiers).and_return(['slack', 'line'])
+        allow(config).to receive(:enabled_notifiers).and_return(%w[slack line])
       end
 
       it 'creates both notifiers' do
@@ -74,7 +74,7 @@ RSpec.describe TechNews::Notifiers::Factory do
 
     context 'when an unknown notifier type is specified' do
       before do
-        allow(config).to receive(:enabled_notifiers).and_return(['slack', 'unknown', 'line'])
+        allow(config).to receive(:enabled_notifiers).and_return(%w[slack unknown line])
       end
 
       it 'creates only valid notifiers' do
@@ -96,7 +96,7 @@ RSpec.describe TechNews::Notifiers::Factory do
 
     context 'when a notifier fails to initialize' do
       before do
-        allow(config).to receive(:enabled_notifiers).and_return(['slack', 'line'])
+        allow(config).to receive(:enabled_notifiers).and_return(%w[slack line])
         allow(config).to receive(:slack_webhook_url).and_return('invalid_url')
       end
 

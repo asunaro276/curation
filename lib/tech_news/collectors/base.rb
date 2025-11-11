@@ -62,9 +62,7 @@ module TechNews
         logger.debug("#{name}: Fetching #{url}")
         response = http_client.get(url)
 
-        unless response.success?
-          raise NetworkError, "HTTP #{response.status} for #{url}"
-        end
+        raise NetworkError, "HTTP #{response.status} for #{url}" unless response.success?
 
         response.body
       rescue Faraday::Error => e

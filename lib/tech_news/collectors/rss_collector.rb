@@ -21,9 +21,7 @@ module TechNews
       def parse(rss_data)
         feed = RSS::Parser.parse(rss_data, false)
 
-        unless feed
-          raise ParseError, "Failed to parse RSS feed"
-        end
+        raise ParseError, 'Failed to parse RSS feed' unless feed
 
         articles = extract_articles(feed)
         limit_articles(articles)
@@ -35,9 +33,7 @@ module TechNews
 
       def validate_url!
         uri = URI.parse(url)
-        unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
-          raise ConfigurationError, "Invalid RSS URL: #{url}"
-        end
+        raise ConfigurationError, "Invalid RSS URL: #{url}" unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
       rescue URI::InvalidURIError => e
         raise ConfigurationError, "Invalid RSS URL: #{e.message}"
       end
@@ -46,31 +42,31 @@ module TechNews
         items = feed.items || []
 
         items.map do |item|
-          begin
-            Models::Article.new(
-              title: extract_title(item),
-              url: extract_url(item),
-              published_at: extract_published_at(item),
-              description: extract_description(item),
-              source: name,
-              metadata: extract_metadata(item)
-            )
-          rescue ArgumentError => e
-            logger.warn("#{name}: Skipping invalid article - #{e.message}")
-            nil
-          end
+          Models::Article.new(
+            title: extract_title(item),
+            url: extract_url(item),
+            published_at: extract_published_at(item),
+            description: extract_description(item),
+            source: name,
+            metadata: extract_metadata(item)
+          )
+        rescue ArgumentError => e
+          logger.warn("#{name}: Skipping invalid article - #{e.message}")
+          nil
         end.compact
       end
 
       def extract_title(item)
         title = item.title
         return '' unless title
+
         title.respond_to?(:content) ? title.content : title.to_s
       end
 
       def extract_url(item)
         link = item.link
         return '' unless link
+
         link.respond_to?(:href) ? link.href : link.to_s
       end
 
@@ -83,6 +79,7 @@ module TechNews
         return item.dc_date if item.respond_to?(:dc_date) && item.dc_date
         return item.published if item.respond_to?(:published) && item.published
         return item.updated if item.respond_to?(:updated) && item.updated
+
         nil
       end
 

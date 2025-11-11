@@ -137,3 +137,13 @@ slack:
 
   # Maximum posts per batch
   max_posts_per_batch: 10
+
+# Summarization configuration
+summarization:
+  # Template for summarization (default, concise, detailed, technical, bullet_points)
+  # - default: 標準形式（2-3文の要約 + 最大3点の箇条書き）
+  # - concise: 超簡潔版（1-2文のみ）
+  # - detailed: 詳細版（4-5文の要約 + 5点程度の箇条書き）
+  # - technical: 技術特化版（アーキテクチャ、技術スタック、パフォーマンスなどに焦点）
+  # - bullet_points: 箇条書きのみ（5-7点）
+  template: default

@@ -47,7 +47,7 @@ module TechNews
       def validate_configuration!
         uri = URI.parse(webhook_url)
         unless uri.is_a?(URI::HTTPS) && uri.host.include?('slack.com')
-          raise ConfigurationError, "Invalid Slack webhook URL"
+          raise ConfigurationError, 'Invalid Slack webhook URL'
         end
       rescue URI::InvalidURIError => e
         raise ConfigurationError, "Invalid webhook URL: #{e.message}"
@@ -119,9 +119,7 @@ module TechNews
           }
 
           # 記事間の区切り線（最後の記事以外）
-          if index < valid_summaries.length - 1
-            blocks << { type: 'divider' }
-          end
+          blocks << { type: 'divider' } if index < valid_summaries.length - 1
         end
 
         message = { blocks: blocks }

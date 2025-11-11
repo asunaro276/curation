@@ -22,27 +22,27 @@ RSpec.describe TechNews::Models::Article do
     end
 
     it 'raises error when title is missing' do
-      expect {
+      expect do
         described_class.new(**valid_attributes.merge(title: nil))
-      }.to raise_error(ArgumentError, /title is required/)
+      end.to raise_error(ArgumentError, /title is required/)
     end
 
     it 'raises error when url is missing' do
-      expect {
+      expect do
         described_class.new(**valid_attributes.merge(url: nil))
-      }.to raise_error(ArgumentError, /url is required/)
+      end.to raise_error(ArgumentError, /url is required/)
     end
 
     it 'raises error when url is invalid' do
-      expect {
+      expect do
         described_class.new(**valid_attributes.merge(url: 'not-a-url'))
-      }.to raise_error(ArgumentError, /url is invalid/)
+      end.to raise_error(ArgumentError, /url is invalid/)
     end
 
     it 'raises error when source is missing' do
-      expect {
+      expect do
         described_class.new(**valid_attributes.merge(source: nil))
-      }.to raise_error(ArgumentError, /source is required/)
+      end.to raise_error(ArgumentError, /source is required/)
     end
 
     it 'accepts nil description' do

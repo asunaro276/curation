@@ -10,8 +10,7 @@ require_relative '../../../lib/tech_news/models/article'
 RSpec.describe TechNews::Notifiers::SlackNotifier do
   let(:config) do
     double('Config',
-      slack_post_interval: 1
-    )
+           slack_post_interval: 1)
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
   let(:webhook_url) { 'https://hooks.slack.com/services/T00/B00/XX' }
@@ -45,13 +44,13 @@ RSpec.describe TechNews::Notifiers::SlackNotifier do
     end
 
     it 'raises error with invalid webhook URL' do
-      expect {
+      expect do
         described_class.new(
           webhook_url: 'http://example.com',
           config: config,
           logger: logger
         )
-      }.to raise_error(TechNews::ConfigurationError, /Invalid Slack webhook/)
+      end.to raise_error(TechNews::ConfigurationError, /Invalid Slack webhook/)
     end
   end
 
@@ -105,9 +104,9 @@ RSpec.describe TechNews::Notifiers::SlackNotifier do
         logger: logger
       )
 
-      expect {
+      expect do
         notifier.notify(summary)
-      }.to raise_error(TechNews::RateLimitError)
+      end.to raise_error(TechNews::RateLimitError)
     end
 
     it 'retries on network errors' do
@@ -115,11 +114,9 @@ RSpec.describe TechNews::Notifiers::SlackNotifier do
       stub_request(:post, webhook_url)
         .to_return do
           call_count += 1
-          if call_count < 3
-            raise Faraday::ConnectionFailed.new('Connection failed')
-          else
-            { status: 200, body: 'ok' }
-          end
+          raise Faraday::ConnectionFailed.new('Connection failed') if call_count < 3
+
+          { status: 200, body: 'ok' }
         end
 
       notifier = described_class.new(
@@ -260,9 +257,9 @@ RSpec.describe TechNews::Notifiers::SlackNotifier do
 
         summaries = [large_summary]
 
-        expect {
+        expect do
           notifier.notify_batch(summaries)
-        }.to raise_error(TechNews::WebhookError, /メッセージサイズが制限/)
+        end.to raise_error(TechNews::WebhookError, /メッセージサイズが制限/)
       end
     end
 

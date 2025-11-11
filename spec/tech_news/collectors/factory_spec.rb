@@ -5,13 +5,12 @@ require 'spec_helper'
 RSpec.describe TechNews::Collectors::Factory do
   let(:config) do
     double('Config',
-      http_timeout: 10,
-      max_articles_per_source: 5,
-      enabled_sources: [
-        { 'type' => 'rss', 'name' => 'Test RSS', 'url' => 'https://example.com/rss', 'enabled' => true },
-        { 'type' => 'github_trending', 'name' => 'GitHub', 'language' => 'ruby', 'enabled' => true }
-      ]
-    )
+           http_timeout: 10,
+           max_articles_per_source: 5,
+           enabled_sources: [
+             { 'type' => 'rss', 'name' => 'Test RSS', 'url' => 'https://example.com/rss', 'enabled' => true },
+             { 'type' => 'github_trending', 'name' => 'GitHub', 'language' => 'ruby', 'enabled' => true }
+           ])
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
 
@@ -37,17 +36,17 @@ RSpec.describe TechNews::Collectors::Factory do
     it 'raises error for unsupported type' do
       source_config = { 'type' => 'unsupported', 'name' => 'Test' }
 
-      expect {
+      expect do
         described_class.create_from_config(source_config, config, logger)
-      }.to raise_error(TechNews::ConfigurationError, /Unsupported collector type/)
+      end.to raise_error(TechNews::ConfigurationError, /Unsupported collector type/)
     end
 
     it 'raises error for RSS collector without URL' do
       source_config = { 'type' => 'rss', 'name' => 'Test RSS' }
 
-      expect {
+      expect do
         described_class.create_from_config(source_config, config, logger)
-      }.to raise_error(TechNews::ConfigurationError, /requires 'url'/)
+      end.to raise_error(TechNews::ConfigurationError, /requires 'url'/)
     end
   end
 
@@ -62,14 +61,13 @@ RSpec.describe TechNews::Collectors::Factory do
 
     it 'skips invalid collectors and continues' do
       bad_config = double('Config',
-        enabled_sources: [
-          { 'type' => 'rss', 'name' => 'Good RSS', 'url' => 'https://example.com/rss' },
-          { 'type' => 'invalid', 'name' => 'Bad' },
-          { 'type' => 'rss', 'name' => 'Another Good', 'url' => 'https://example.com/rss2' }
-        ],
-        http_timeout: 10,
-        max_articles_per_source: 5
-      )
+                          enabled_sources: [
+                            { 'type' => 'rss', 'name' => 'Good RSS', 'url' => 'https://example.com/rss' },
+                            { 'type' => 'invalid', 'name' => 'Bad' },
+                            { 'type' => 'rss', 'name' => 'Another Good', 'url' => 'https://example.com/rss2' }
+                          ],
+                          http_timeout: 10,
+                          max_articles_per_source: 5)
 
       collectors = described_class.create_all_from_config(bad_config, logger)
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'yaml'
+require_relative 'summarizer_templates'
 
 module TechNews
   class Config
@@ -8,7 +9,7 @@ module TechNews
 
     attr_reader :sources, :limits, :slack, :anthropic_api_key, :slack_webhook_url,
                 :log_level, :claude_model, :line_channel_access_token, :line_target_id,
-                :enabled_notifiers
+                :enabled_notifiers, :summarization_template
 
     def initialize(config_path: 'config/sources.yml')
       @config_path = config_path
@@ -48,14 +49,16 @@ module TechNews
     private
 
     def load_config
-      unless File.exist?(@config_path)
-        raise ConfigurationError, "Configuration file not found: #{@config_path}"
-      end
+      raise ConfigurationError, "Configuration file not found: #{@config_path}" unless File.exist?(@config_path)
 
       config = YAML.load_file(@config_path)
       @sources = config['sources'] || []
       @limits = config['limits'] || {}
       @slack = config['slack'] || {}
+
+      # Load summarization settings
+      summarization = config['summarization'] || {}
+      @summarization_template = summarization['template'] || 'default'
     rescue Psych::SyntaxError => e
       raise ConfigurationError, "Invalid YAML in configuration file: #{e.message}"
     end
@@ -78,28 +81,28 @@ module TechNews
     def validate!
       errors = []
 
-      errors << "ANTHROPIC_API_KEY environment variable is required" if @anthropic_api_key.nil? || @anthropic_api_key.empty?
-      errors << "No sources defined in configuration" if @sources.empty?
-      errors << "No enabled sources found" if enabled_sources.empty?
+      if @anthropic_api_key.nil? || @anthropic_api_key.empty?
+        errors << 'ANTHROPIC_API_KEY environment variable is required'
+      end
+      errors << 'No sources defined in configuration' if @sources.empty?
+      errors << 'No enabled sources found' if enabled_sources.empty?
 
       # Validate enabled notifiers
       if @enabled_notifiers.empty?
-        errors << "At least one notifier must be enabled (ENABLED_NOTIFIERS environment variable)"
+        errors << 'At least one notifier must be enabled (ENABLED_NOTIFIERS environment variable)'
       end
 
       # Validate notifier-specific requirements
-      if @enabled_notifiers.include?('slack')
-        if @slack_webhook_url.nil? || @slack_webhook_url.empty?
-          errors << "SLACK_WEBHOOK_URL environment variable is required when Slack notifier is enabled"
-        end
+      if @enabled_notifiers.include?('slack') && (@slack_webhook_url.nil? || @slack_webhook_url.empty?)
+        errors << 'SLACK_WEBHOOK_URL environment variable is required when Slack notifier is enabled'
       end
 
       if @enabled_notifiers.include?('line')
         if @line_channel_access_token.nil? || @line_channel_access_token.empty?
-          errors << "LINE_CHANNEL_ACCESS_TOKEN environment variable is required when LINE notifier is enabled"
+          errors << 'LINE_CHANNEL_ACCESS_TOKEN environment variable is required when LINE notifier is enabled'
         end
         if @line_target_id.nil? || @line_target_id.empty?
-          errors << "LINE_USER_ID or LINE_GROUP_ID environment variable is required when LINE notifier is enabled"
+          errors << 'LINE_USER_ID or LINE_GROUP_ID environment variable is required when LINE notifier is enabled'
         end
       end
 
@@ -108,6 +111,11 @@ module TechNews
         errors << "Source #{index}: missing 'type' field" unless source['type']
         errors << "Source #{index}: missing 'name' field" unless source['name']
         errors << "Source #{index}: 'enabled' must be a boolean" unless [true, false].include?(source['enabled'])
+      end
+
+      # Validate summarization template
+      unless SummarizerTemplates.template_exists?(@summarization_template)
+        errors << "Invalid summarization template '#{@summarization_template}'. Available: #{SummarizerTemplates.available_templates.join(', ')}"
       end
 
       raise ConfigurationError, "Configuration validation failed:\n  - #{errors.join("\n  - ")}" unless errors.empty?

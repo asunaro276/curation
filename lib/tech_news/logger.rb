@@ -6,9 +6,9 @@ module TechNews
   class AppLogger
     SENSITIVE_PATTERNS = [
       /ANTHROPIC_API_KEY=[^\s]+/,
-      /sk-ant-[^\s]+/,  # Anthropic API keys
-      /xoxb-[^\s]+/,     # Slack bot tokens
-      /hooks\.slack\.com\/services\/[^\s]+/  # Slack webhook URLs
+      /sk-ant-[^\s]+/, # Anthropic API keys
+      /xoxb-[^\s]+/, # Slack bot tokens
+      %r{hooks\.slack\.com/services/[^\s]+} # Slack webhook URLs
     ].freeze
 
     attr_reader :logger

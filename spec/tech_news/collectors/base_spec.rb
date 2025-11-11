@@ -5,9 +5,8 @@ require 'spec_helper'
 RSpec.describe TechNews::Collectors::Base do
   let(:config) do
     double('Config',
-      http_timeout: 10,
-      max_articles_per_source: 5
-    )
+           http_timeout: 10,
+           max_articles_per_source: 5)
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
 
@@ -19,7 +18,7 @@ RSpec.describe TechNews::Collectors::Base do
       @fetch_result || 'test data'
     end
 
-    def parse(data)
+    def parse(_data)
       @parse_result || []
     end
   end
@@ -44,27 +43,27 @@ RSpec.describe TechNews::Collectors::Base do
       collector = TestCollector.new(name: 'Test', config: config, logger: logger)
       allow(collector).to receive(:fetch).and_raise(StandardError, 'Test error')
 
-      expect {
+      expect do
         collector.collect
-      }.to raise_error(TechNews::CollectorError, /Test error/)
+      end.to raise_error(TechNews::CollectorError, /Test error/)
     end
   end
 
   describe '#fetch' do
     it 'must be implemented by subclasses' do
       collector = described_class.new(name: 'Test', config: config, logger: logger)
-      expect {
+      expect do
         collector.fetch
-      }.to raise_error(NotImplementedError)
+      end.to raise_error(NotImplementedError)
     end
   end
 
   describe '#parse' do
     it 'must be implemented by subclasses' do
       collector = described_class.new(name: 'Test', config: config, logger: logger)
-      expect {
+      expect do
         collector.parse('data')
-      }.to raise_error(NotImplementedError)
+      end.to raise_error(NotImplementedError)
     end
   end
 
@@ -83,9 +82,9 @@ RSpec.describe TechNews::Collectors::Base do
         .to_return(status: 404)
 
       collector = TestCollector.new(name: 'Test', config: config, logger: logger)
-      expect {
+      expect do
         collector.send(:fetch_url, 'https://example.com/error')
-      }.to raise_error(TechNews::NetworkError, /404/)
+      end.to raise_error(TechNews::NetworkError, /404/)
     end
   end
 

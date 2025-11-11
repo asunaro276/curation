@@ -51,15 +51,15 @@ begin
   result = orchestrator.run
 
   # Display summary
-  puts "\n" + "=" * 50
-  puts "Tech News Curation Complete"
-  puts "=" * 50
+  puts "\n" + '=' * 50
+  puts 'Tech News Curation Complete'
+  puts '=' * 50
   puts "Duration: #{result[:duration].round(2)}s"
   puts "Articles collected: #{result[:articles_collected]}"
   puts "Articles summarized: #{result[:articles_summarized]}"
   puts "Posts sent: #{result[:posts_sent]}"
   puts "Posts failed: #{result[:posts_failed]}"
-  puts "=" * 50
+  puts '=' * 50
 
   exit 0
 rescue TechNews::ConfigurationError => e

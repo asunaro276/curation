@@ -1,10 +1,11 @@
 # frozen_string_literal: true
 
 require 'anthropic'
+require_relative 'summarizer_templates'
 
 module TechNews
   class Summarizer
-    attr_reader :api_key, :model, :config, :logger
+    attr_reader :api_key, :model, :config, :logger, :template
 
     def initialize(api_key:, config:, logger:, model: nil)
       @api_key = api_key
@@ -12,6 +13,11 @@ module TechNews
       @config = config
       @logger = logger
       @client = Anthropic::Client.new(access_token: api_key)
+
+      # テンプレートを読み込む
+      template_name = config.summarization_template
+      @template = SummarizerTemplates.get_template(template_name)
+      logger.info("Using summarization template: #{template_name}")
     end
 
     def summarize(article)
@@ -23,6 +29,9 @@ module TechNews
       begin
         response = call_api(prompt)
         parse_response(response, article)
+      rescue RateLimitError, APIError
+        # Re-raise specific API errors without wrapping
+        raise
       rescue StandardError => e
         logger.error("Failed to summarize #{article.title}: #{e.message}")
         raise SummarizerError, "Summarization failed: #{e.message}"
@@ -36,18 +45,16 @@ module TechNews
       failed_count = 0
 
       articles.each_with_index do |article, index|
-        begin
-          summary = summarize(article)
-          summaries << summary
-          logger.debug("Progress: #{index + 1}/#{articles.length} articles summarized")
+        summary = summarize(article)
+        summaries << summary
+        logger.debug("Progress: #{index + 1}/#{articles.length} articles summarized")
 
-          # Wait between API calls to avoid rate limiting
-          sleep(wait_interval) if index < articles.length - 1
-        rescue SummarizerError => e
-          # Log error but continue with other articles
-          logger.error("Batch summarization failed for article #{index + 1}: #{e.message}")
-          failed_count += 1
-        end
+        # Wait between API calls to avoid rate limiting
+        sleep(wait_interval) if index < articles.length - 1
+      rescue SummarizerError => e
+        # Log error but continue with other articles
+        logger.error("Batch summarization failed for article #{index + 1}: #{e.message}")
+        failed_count += 1
       end
 
       logger.info("Batch summarization complete: #{summaries.length} succeeded, #{failed_count} failed")
@@ -63,17 +70,14 @@ module TechNews
 
     def build_prompt(article, content)
       <<~PROMPT
-        あなたは技術ニュースのキュレーターです。
-        以下の記事を日本語で要約してください。
+        #{@template[:system_prompt]}
 
         タイトル: #{article.title}
         URL: #{article.url}
         ソース: #{article.source}
         内容: #{content}
 
-        以下の形式で出力してください:
-        1. 2-3文の簡潔な要約
-        2. 重要なポイント（箇条書き、最大3点）
+        #{@template[:output_format].strip}
 
         要約:
       PROMPT
@@ -90,16 +94,12 @@ module TechNews
         }
       )
 
-      unless response['content'] && response['content'][0]
-        raise APIError, "Invalid API response format"
-      end
+      raise APIError, 'Invalid API response format' unless response['content'] && response['content'][0]
 
       response
     rescue Faraday::Error => e
       # Log detailed error information
-      if e.response
-        logger.error("API Error Response: #{e.response[:status]} - #{e.response[:body]}")
-      end
+      logger.error("API Error Response: #{e.response[:status]} - #{e.response[:body]}") if e.response
       handle_api_error(e)
     end
 
@@ -121,7 +121,7 @@ module TechNews
 
       if text.length > max_chars
         logger.debug("Truncating content from #{text.length} to #{max_chars} chars")
-        text[0...max_chars] + "..."
+        text[0...max_chars] + '...'
       else
         text
       end
@@ -130,9 +130,9 @@ module TechNews
     def handle_api_error(error)
       case error
       when Faraday::TooManyRequestsError
-        raise RateLimitError, "API rate limit exceeded"
+        raise RateLimitError, 'API rate limit exceeded'
       when Faraday::TimeoutError
-        raise APIError, "API request timed out"
+        raise APIError, 'API request timed out'
       else
         raise APIError, "API error: #{error.message}"
       end

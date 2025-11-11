@@ -31,7 +31,7 @@ module TechNews
 
     def run
       start_time = Time.now
-      logger.info("=== Starting Tech News Curation ===")
+      logger.info('=== Starting Tech News Curation ===')
 
       begin
         articles = collect_articles
@@ -52,18 +52,16 @@ module TechNews
     private
 
     def collect_articles
-      logger.info("--- Phase 1: Collecting Articles ---")
+      logger.info('--- Phase 1: Collecting Articles ---')
       all_articles = []
 
       collectors.each do |collector|
-        begin
-          articles = collector.collect
-          all_articles.concat(articles)
-          logger.info("#{collector.name}: Collected #{articles.length} articles")
-        rescue CollectorError => e
-          logger.error("#{collector.name}: Collection failed - #{e.message}")
-          # Continue with other collectors
-        end
+        articles = collector.collect
+        all_articles.concat(articles)
+        logger.info("#{collector.name}: Collected #{articles.length} articles")
+      rescue CollectorError => e
+        logger.error("#{collector.name}: Collection failed - #{e.message}")
+        # Continue with other collectors
       end
 
       logger.info("Total articles collected: #{all_articles.length}")
@@ -71,11 +69,13 @@ module TechNews
     end
 
     def summarize_articles(articles)
-      logger.info("--- Phase 2: Summarizing Articles ---")
+      logger.info('--- Phase 2: Summarizing Articles ---')
 
       if dry_run
-        logger.info("Dry run: Skipping summarization")
-        return articles.map { |article| { article: article, summary: "[DRY RUN] Summary placeholder", model: "dry-run", timestamp: Time.now } }
+        logger.info('Dry run: Skipping summarization')
+        return articles.map do |article|
+          { article: article, summary: '[DRY RUN] Summary placeholder', model: 'dry-run', timestamp: Time.now }
+        end
       end
 
       summaries = summarizer.summarize_batch(articles)
@@ -84,16 +84,16 @@ module TechNews
     end
 
     def publish_summaries(summaries)
-      logger.info("--- Phase 3: Publishing Summaries ---")
+      logger.info('--- Phase 3: Publishing Summaries ---')
 
       if dry_run
-        logger.info("Dry run: Skipping notification posting")
+        logger.info('Dry run: Skipping notification posting')
         return { notifiers: {}, total_posted: summaries.length, total_failed: 0 }
       end
 
       if notifiers.empty?
-        logger.error("No notifiers available for publishing")
-        raise NotifierError, "No notifiers configured"
+        logger.error('No notifiers available for publishing')
+        raise NotifierError, 'No notifiers configured'
       end
 
       results = {}
@@ -118,16 +118,14 @@ module TechNews
       end
 
       # Raise error only if all notifiers failed
-      if total_posted == 0 && total_failed > 0
-        raise NotifierError, "All notifiers failed to publish summaries"
-      end
+      raise NotifierError, 'All notifiers failed to publish summaries' if total_posted == 0 && total_failed > 0
 
       results.merge(total_posted: total_posted, total_failed: total_failed, notifiers: results)
     end
 
     def report_results(articles, summaries, post_result, start_time)
       duration = Time.now - start_time
-      logger.info("=== Curation Complete ===")
+      logger.info('=== Curation Complete ===')
       logger.info("Duration: #{duration.round(2)}s")
       logger.info("Articles collected: #{articles.length}")
       logger.info("Articles summarized: #{summaries.length}")
@@ -136,6 +134,7 @@ module TechNews
       if post_result[:notifiers]
         post_result[:notifiers].each do |notifier_name, result|
           next if result.is_a?(Hash) && result.empty?
+
           logger.info("#{notifier_name.to_s.capitalize}: #{result[:posted] || 0} posted, #{result[:failed] || 0} failed")
         end
       end
@@ -154,7 +153,7 @@ module TechNews
     end
 
     def handle_error(error)
-      logger.error("=== Fatal Error ===")
+      logger.error('=== Fatal Error ===')
       logger.error("#{error.class}: #{error.message}")
       logger.error(error.backtrace.first(5).join("\n")) if error.backtrace
     end

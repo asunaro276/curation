@@ -5,9 +5,8 @@ require 'spec_helper'
 RSpec.describe TechNews::Collectors::GithubTrendingCollector do
   let(:config) do
     double('Config',
-      http_timeout: 10,
-      max_articles_per_source: 5
-    )
+           http_timeout: 10,
+           max_articles_per_source: 5)
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
 

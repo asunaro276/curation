@@ -5,8 +5,7 @@ require 'spec_helper'
 RSpec.describe TechNews::Notifier do
   let(:config) do
     double('Config',
-      slack_post_interval: 1
-    )
+           slack_post_interval: 1)
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
   let(:webhook_url) { 'https://hooks.slack.com/services/T00/B00/XX' }
@@ -40,13 +39,13 @@ RSpec.describe TechNews::Notifier do
     end
 
     it 'raises error with invalid webhook URL' do
-      expect {
+      expect do
         described_class.new(
           webhook_url: 'http://example.com',
           config: config,
           logger: logger
         )
-      }.to raise_error(TechNews::ConfigurationError, /Invalid Slack webhook/)
+      end.to raise_error(TechNews::ConfigurationError, /Invalid Slack webhook/)
     end
   end
 
@@ -100,9 +99,9 @@ RSpec.describe TechNews::Notifier do
         logger: logger
       )
 
-      expect {
+      expect do
         notifier.notify(summary)
-      }.to raise_error(TechNews::RateLimitError)
+      end.to raise_error(TechNews::RateLimitError)
     end
 
     it 'retries on network errors' do
@@ -110,11 +109,9 @@ RSpec.describe TechNews::Notifier do
       stub_request(:post, webhook_url)
         .to_return do
           call_count += 1
-          if call_count < 3
-            raise Faraday::ConnectionFailed.new('Connection failed')
-          else
-            { status: 200, body: 'ok' }
-          end
+          raise Faraday::ConnectionFailed.new('Connection failed') if call_count < 3
+
+          { status: 200, body: 'ok' }
         end
 
       notifier = described_class.new(

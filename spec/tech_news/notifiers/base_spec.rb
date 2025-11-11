@@ -41,9 +41,9 @@ RSpec.describe TechNews::Notifiers::Base do
         end
       end
 
-      expect {
+      expect do
         notifier_class_with_validation.new(config: config, logger: logger)
-      }.to raise_error(StandardError, 'Validation called')
+      end.to raise_error(StandardError, 'Validation called')
     end
   end
 
@@ -85,6 +85,7 @@ RSpec.describe TechNews::Notifiers::Base do
       allow(notifier).to receive(:notify) do
         call_count += 1
         raise StandardError, 'API error' if call_count == 1
+
         true
       end
       allow(notifier).to receive(:sleep)
@@ -154,6 +155,7 @@ RSpec.describe TechNews::Notifiers::Base do
       result = notifier.send(:retry_with_backoff, max_retries: 3) do
         call_count += 1
         raise Faraday::Error, 'Network error' if call_count < 2
+
         'success'
       end
 
@@ -165,11 +167,11 @@ RSpec.describe TechNews::Notifiers::Base do
     it 'raises WebhookError after max retries' do
       allow(logger).to receive(:warn)
 
-      expect {
+      expect do
         notifier.send(:retry_with_backoff, max_retries: 2) do
           raise Faraday::Error, 'Network error'
         end
-      }.to raise_error(TechNews::WebhookError, /Failed after 2 retries/)
+      end.to raise_error(TechNews::WebhookError, /Failed after 2 retries/)
     end
   end
 
@@ -192,25 +194,25 @@ RSpec.describe TechNews::Notifiers::Base do
     it 'raises RateLimitError on 429' do
       response = instance_double(Faraday::Response, status: 429)
 
-      expect {
+      expect do
         notifier.send(:handle_response, response)
-      }.to raise_error(TechNews::RateLimitError, /rate limit exceeded/)
+      end.to raise_error(TechNews::RateLimitError, /rate limit exceeded/)
     end
 
     it 'raises WebhookError on 400-499' do
       response = instance_double(Faraday::Response, status: 400, body: 'Bad request')
 
-      expect {
+      expect do
         notifier.send(:handle_response, response)
-      }.to raise_error(TechNews::WebhookError, /client error/)
+      end.to raise_error(TechNews::WebhookError, /client error/)
     end
 
     it 'raises WebhookError on 500-599' do
       response = instance_double(Faraday::Response, status: 500)
 
-      expect {
+      expect do
         notifier.send(:handle_response, response)
-      }.to raise_error(TechNews::WebhookError, /server error/)
+      end.to raise_error(TechNews::WebhookError, /server error/)
     end
   end
 end
