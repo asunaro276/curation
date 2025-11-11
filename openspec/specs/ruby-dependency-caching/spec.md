@@ -1,9 +1,9 @@
 # Capability: Ruby依存関係キャッシュ (ruby-dependency-caching)
 
-## 説明
+## Purpose
 GitHub ActionsにおけるRuby gem依存関係の明示的なキャッシュ管理を提供する。Gemfile.lockをキーとして、bundle installの結果をキャッシュし、実行時間を短縮する。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Gemfile.lockベースのキャッシュキー生成
 キャッシュキーは、OS、Rubyバージョン、Gemfile.lockのハッシュ値を組み合わせて生成されなければならない (MUST)。
