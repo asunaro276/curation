@@ -17,11 +17,40 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Cache Ruby gems
+        id: cache-gems
+        uses: actions/cache@v4
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-ruby-3.2-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-ruby-3.2-gems-
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
-          bundler-cache: true  # Automatically runs bundle install and caches gems
+          bundler-cache: false  # キャッシュは明示的に管理
+
+      - name: Configure Bundler
+        run: |
+          bundle config set --local path 'vendor/bundle'
+
+      - name: Install dependencies
+        if: steps.cache-gems.outputs.cache-hit != 'true'
+        run: |
+          echo "キャッシュミス: bundle install を実行します"
+          bundle install --jobs 4 --retry 3
+
+      - name: Display cache status
+        run: |
+          if [ "${{ steps.cache-gems.outputs.cache-hit }}" == "true" ]; then
+            echo "✅ キャッシュヒット: Gemfile.lock が変更されていません"
+            echo "bundle install はスキップされました"
+          else
+            echo "❌ キャッシュミス: 依存関係を新規インストールしました"
+            echo "次回実行時はキャッシュが利用されます"
+          fi
 
       - name: Verify configuration
         run: |
