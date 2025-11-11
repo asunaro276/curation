@@ -4,7 +4,7 @@ sources:
   - type: github_trending
     name: "GitHub Trending Ruby"
     language: "ruby"
-    enabled: true
+    enabled: false
 
   - type: rss
     name: "Ruby Weekly"
@@ -14,12 +14,12 @@ sources:
   - type: rss
     name: "Amazon Web Services ブログ"
     url: "http://feeds.feedburner.com/AmazonWebServicesBlogJp?format=xml"
-    enabled: false  # Example disabled source
+    enabled: true  # Example disabled source
 
   - type: rss
     name: "Developers.IO（クラスメソッド）"
     url: "http://dev.classmethod.jp/feed/"
-    enabled: false # Example disabled source
+    enabled: true # Example disabled source
 
   - type: rss
     name: "Mercari Engineering Blog"
@@ -119,7 +119,7 @@ sources:
 # Limits and constraints
 limits:
   # Maximum articles to fetch per source
-  max_articles_per_source: 1
+  max_articles_per_source: 2
 
   # Maximum content tokens for Claude API
   max_content_tokens: 4000
