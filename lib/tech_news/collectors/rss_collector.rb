@@ -75,7 +75,15 @@ module TechNews
       end
 
       def extract_published_at(item)
-        item.pubDate || item.dc_date || item.published || nil
+        # Try different date fields depending on RSS version
+        # RSS 2.0: pubDate
+        # Dublin Core: dc_date
+        # Atom: published, updated
+        return item.pubDate if item.respond_to?(:pubDate) && item.pubDate
+        return item.dc_date if item.respond_to?(:dc_date) && item.dc_date
+        return item.published if item.respond_to?(:published) && item.published
+        return item.updated if item.respond_to?(:updated) && item.updated
+        nil
       end
 
       def extract_description(item)

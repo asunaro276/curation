@@ -2,6 +2,7 @@
 
 require 'faraday'
 require 'faraday/retry'
+require 'faraday/follow_redirects'
 
 module TechNews
   module Collectors
@@ -48,6 +49,7 @@ module TechNews
             backoff_factor: 2,
             exceptions: [Faraday::TimeoutError, Faraday::ConnectionFailed]
           }
+          f.response :follow_redirects, limit: 5
           f.options.timeout = config.http_timeout
           f.options.open_timeout = 5
           f.headers['User-Agent'] = 'TechNewsCurator/1.0'

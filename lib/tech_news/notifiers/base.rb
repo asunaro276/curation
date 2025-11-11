@@ -23,30 +23,47 @@ module TechNews
       end
 
       # Batch notification with rate limiting
-      def notify_batch(summaries, wait_interval: nil)
+      # consolidated: true の場合、複数記事を1つのメッセージに統合して送信
+      def notify_batch(summaries, wait_interval: nil, consolidated: true)
         interval = wait_interval || default_wait_interval
-        logger.info("Starting batch notification of #{summaries.length} summaries to #{notifier_name}")
+        logger.info("Starting batch notification of #{summaries.length} summaries to #{notifier_name} (consolidated: #{consolidated})")
 
-        posted_count = 0
-        failed_count = 0
-
-        summaries.each_with_index do |summary, index|
+        # 統合メッセージモードで、サブクラスがサポートしている場合
+        if consolidated && respond_to?(:notify_consolidated, true)
           begin
-            notify(summary)
-            posted_count += 1
-            logger.debug("#{notifier_name}: Progress #{index + 1}/#{summaries.length} posted")
-
-            # Wait between posts to avoid rate limiting
-            sleep(interval) if index < summaries.length - 1
+            notify_consolidated(summaries)
+            logger.info("#{notifier_name}: Consolidated batch notification complete: 1 message sent with #{summaries.length} articles")
+            { posted: summaries.length, failed: 0 }
+          rescue RateLimitError, WebhookError
+            # 重要なエラーは再raise
+            raise
           rescue StandardError => e
-            # Log error but continue with other posts
-            logger.error("#{notifier_name}: Batch notification failed for post #{index + 1}: #{e.message}")
-            failed_count += 1
+            logger.error("#{notifier_name}: Consolidated batch notification failed: #{e.message}")
+            { posted: 0, failed: summaries.length }
           end
-        end
+        else
+          # 従来の個別投稿モード
+          posted_count = 0
+          failed_count = 0
 
-        logger.info("#{notifier_name}: Batch notification complete: #{posted_count} succeeded, #{failed_count} failed")
-        { posted: posted_count, failed: failed_count }
+          summaries.each_with_index do |summary, index|
+            begin
+              notify(summary)
+              posted_count += 1
+              logger.debug("#{notifier_name}: Progress #{index + 1}/#{summaries.length} posted")
+
+              # Wait between posts to avoid rate limiting
+              sleep(interval) if index < summaries.length - 1
+            rescue StandardError => e
+              # Log error but continue with other posts
+              logger.error("#{notifier_name}: Batch notification failed for post #{index + 1}: #{e.message}")
+              failed_count += 1
+            end
+          end
+
+          logger.info("#{notifier_name}: Batch notification complete: #{posted_count} succeeded, #{failed_count} failed")
+          { posted: posted_count, failed: failed_count }
+        end
       end
 
       protected

@@ -135,46 +135,182 @@ RSpec.describe TechNews::Notifiers::SlackNotifier do
   end
 
   describe '#notify_batch' do
-    it 'posts multiple summaries with interval' do
-      stub_request(:post, webhook_url)
-        .to_return(status: 200, body: 'ok')
+    context 'with consolidated mode (default)' do
+      it 'posts multiple summaries as one consolidated message' do
+        stub_request(:post, webhook_url)
+          .to_return(status: 200, body: 'ok')
 
-      notifier = described_class.new(
-        webhook_url: webhook_url,
-        config: config,
-        logger: logger
-      )
+        notifier = described_class.new(
+          webhook_url: webhook_url,
+          config: config,
+          logger: logger
+        )
 
-      summaries = [summary, summary]
-      result = notifier.notify_batch(summaries, wait_interval: 0.1)
+        article2 = TechNews::Models::Article.new(
+          title: 'Test Article 2',
+          url: 'https://example.com/article2',
+          source: 'Test Source 2',
+          description: 'Test description 2'
+        )
 
-      expect(result[:posted]).to eq(2)
-      expect(result[:failed]).to eq(0)
-    end
+        summary2 = {
+          article: article2,
+          summary: "要約テキスト2\n\n重要なポイント:\n- ポイント1\n- ポイント2",
+          model: 'claude-3-5-sonnet-20241022',
+          timestamp: Time.now
+        }
 
-    it 'continues on partial failures' do
-      call_count = 0
-      stub_request(:post, webhook_url)
-        .to_return do
-          call_count += 1
-          if call_count == 2
-            { status: 500, body: 'error' }
-          else
+        summaries = [summary, summary2]
+        result = notifier.notify_batch(summaries)
+
+        expect(result[:posted]).to eq(2)
+        expect(result[:failed]).to eq(0)
+
+        # 1回のPOSTリクエストのみ送信されることを確認
+        expect(WebMock).to have_requested(:post, webhook_url).once
+      end
+
+      it 'includes article count in header' do
+        posted_body = nil
+        stub_request(:post, webhook_url)
+          .to_return do |request|
+            posted_body = JSON.parse(request.body)
             { status: 200, body: 'ok' }
           end
-        end
 
-      notifier = described_class.new(
-        webhook_url: webhook_url,
-        config: config,
-        logger: logger
-      )
+        notifier = described_class.new(
+          webhook_url: webhook_url,
+          config: config,
+          logger: logger
+        )
 
-      summaries = [summary, summary, summary]
-      result = notifier.notify_batch(summaries, wait_interval: 0.1)
+        summaries = [summary, summary]
+        notifier.notify_batch(summaries)
 
-      expect(result[:posted]).to eq(2)
-      expect(result[:failed]).to eq(1)
+        header_block = posted_body['blocks'].find { |b| b['type'] == 'header' }
+        expect(header_block['text']['text']).to include('2件')
+      end
+
+      it 'includes dividers between articles' do
+        posted_body = nil
+        stub_request(:post, webhook_url)
+          .to_return do |request|
+            posted_body = JSON.parse(request.body)
+            { status: 200, body: 'ok' }
+          end
+
+        notifier = described_class.new(
+          webhook_url: webhook_url,
+          config: config,
+          logger: logger
+        )
+
+        summaries = [summary, summary]
+        notifier.notify_batch(summaries)
+
+        divider_blocks = posted_body['blocks'].select { |b| b['type'] == 'divider' }
+        expect(divider_blocks.length).to eq(1) # 2記事なので区切り線は1つ
+      end
+
+      it 'skips empty summaries' do
+        posted_body = nil
+        stub_request(:post, webhook_url)
+          .to_return do |request|
+            posted_body = JSON.parse(request.body)
+            { status: 200, body: 'ok' }
+          end
+
+        notifier = described_class.new(
+          webhook_url: webhook_url,
+          config: config,
+          logger: logger
+        )
+
+        empty_summary = {
+          article: article,
+          summary: '',
+          model: 'claude-3-5-sonnet-20241022',
+          timestamp: Time.now
+        }
+
+        summaries = [summary, empty_summary]
+        notifier.notify_batch(summaries)
+
+        header_block = posted_body['blocks'].find { |b| b['type'] == 'header' }
+        expect(header_block['text']['text']).to include('1件') # 空の要約はカウントしない
+      end
+
+      it 'validates message size' do
+        stub_request(:post, webhook_url)
+          .to_return(status: 200, body: 'ok')
+
+        notifier = described_class.new(
+          webhook_url: webhook_url,
+          config: config,
+          logger: logger
+        )
+
+        # 非常に長い要約を作成してサイズ制限をテスト
+        large_summary = {
+          article: article,
+          summary: 'x' * 40_000, # 40,000文字
+          model: 'claude-3-5-sonnet-20241022',
+          timestamp: Time.now
+        }
+
+        summaries = [large_summary]
+
+        expect {
+          notifier.notify_batch(summaries)
+        }.to raise_error(TechNews::WebhookError, /メッセージサイズが制限/)
+      end
+    end
+
+    context 'with individual mode' do
+      it 'posts multiple summaries with interval' do
+        stub_request(:post, webhook_url)
+          .to_return(status: 200, body: 'ok')
+
+        notifier = described_class.new(
+          webhook_url: webhook_url,
+          config: config,
+          logger: logger
+        )
+
+        summaries = [summary, summary]
+        result = notifier.notify_batch(summaries, wait_interval: 0.1, consolidated: false)
+
+        expect(result[:posted]).to eq(2)
+        expect(result[:failed]).to eq(0)
+
+        # 2回のPOSTリクエストが送信されることを確認
+        expect(WebMock).to have_requested(:post, webhook_url).twice
+      end
+
+      it 'continues on partial failures' do
+        call_count = 0
+        stub_request(:post, webhook_url)
+          .to_return do
+            call_count += 1
+            if call_count == 2
+              { status: 500, body: 'error' }
+            else
+              { status: 200, body: 'ok' }
+            end
+          end
+
+        notifier = described_class.new(
+          webhook_url: webhook_url,
+          config: config,
+          logger: logger
+        )
+
+        summaries = [summary, summary, summary]
+        result = notifier.notify_batch(summaries, wait_interval: 0.1, consolidated: false)
+
+        expect(result[:posted]).to eq(2)
+        expect(result[:failed]).to eq(1)
+      end
     end
   end
 end

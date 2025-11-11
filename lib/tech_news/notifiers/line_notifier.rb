@@ -31,8 +31,11 @@ module TechNews
       protected
 
       def validate_configuration!
-        raise ConfigurationError, "LINE Channel Access Token is required" if channel_access_token.nil? || channel_access_token.empty?
-        raise ConfigurationError, "LINE Target ID is required" if target_id.nil? || target_id.empty?
+        if channel_access_token.nil? || channel_access_token.empty?
+          raise ConfigurationError,
+                'LINE Channel Access Token is required'
+        end
+        raise ConfigurationError, 'LINE Target ID is required' if target_id.nil? || target_id.empty?
       end
 
       def default_wait_interval
@@ -135,8 +138,8 @@ module TechNews
 
       def http_client
         @http_client ||= Faraday.new(url: LINE_API_URL) do |f|
-          f.options.timeout = 10
-          f.options.open_timeout = 5
+          f.options.timeout = 30
+          f.options.open_timeout = 20
           f.adapter Faraday.default_adapter
         end
       end

@@ -130,7 +130,7 @@ RSpec.describe TechNews::Notifier do
   end
 
   describe '#notify_batch' do
-    it 'posts multiple summaries with interval' do
+    it 'posts multiple summaries with interval (individual mode)' do
       stub_request(:post, webhook_url)
         .to_return(status: 200, body: 'ok')
 
@@ -141,13 +141,13 @@ RSpec.describe TechNews::Notifier do
       )
 
       summaries = [summary, summary]
-      result = notifier.notify_batch(summaries, wait_interval: 0.1)
+      result = notifier.notify_batch(summaries, wait_interval: 0.1, consolidated: false)
 
       expect(result[:posted]).to eq(2)
       expect(result[:failed]).to eq(0)
     end
 
-    it 'continues on partial failures' do
+    it 'continues on partial failures (individual mode)' do
       call_count = 0
       stub_request(:post, webhook_url)
         .to_return do
@@ -166,7 +166,7 @@ RSpec.describe TechNews::Notifier do
       )
 
       summaries = [summary, summary, summary]
-      result = notifier.notify_batch(summaries, wait_interval: 0.1)
+      result = notifier.notify_batch(summaries, wait_interval: 0.1, consolidated: false)
 
       expect(result[:posted]).to eq(2)
       expect(result[:failed]).to eq(1)

@@ -131,8 +131,15 @@ cp config/sources.example.yml config/sources.yml
 #### Notifier (`lib/tech_news/notifier.rb`)
 - Slack Webhook経由でメッセージ投稿
 - Block Kit形式でリッチなメッセージを構築
-- バッチ投稿とレート制限回避機能
-- **メッセージフォーマットのカスタマイズ**: `#format_message`メソッドを編集
+- **統合メッセージモード（デフォルト）**: 複数記事を1つのメッセージにまとめて送信
+  - API呼び出し回数を大幅削減（10記事で1/10に）
+  - メッセージサイズ制限（35,000バイト）の自動検証
+  - 空の要約を自動的にフィルタリング
+  - 記事間に区切り線を挿入して視認性を維持
+- **個別メッセージモード**: `notify_batch(summaries, consolidated: false)` で従来の個別投稿も可能
+- **メッセージフォーマットのカスタマイズ**:
+  - 統合メッセージ: `#format_consolidated_message`メソッドを編集
+  - 個別メッセージ: `#format_message`メソッドを編集
 
 #### Config (`lib/tech_news/config.rb`)
 - `config/sources.yml`の読み込みと検証
