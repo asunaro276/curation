@@ -3,21 +3,21 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 <!-- OPENSPEC:START -->
-# OpenSpec 説明書
+# OpenSpec Instructions
 
-これらの説明は、このプロジェクトで作業する AI アシスタント向けです。
+These instructions are for AI assistants working in this project.
 
-以下のようなリクエストの場合は、必ず `@/openspec/AGENTS.md` を開いてください:
-- 計画や提案に言及している（提案、仕様、変更、計画などの言葉）
-- 新機能、破壊的変更、アーキテクチャの変更、大規模なパフォーマンス/セキュリティ作業を導入する
-- 曖昧に聞こえ、コーディング前に権威ある仕様が必要な場合
+Always open `@/openspec/AGENTS.md` when the request:
+- Mentions planning or proposals (words like proposal, spec, change, plan)
+- Introduces new capabilities, breaking changes, architecture shifts, or big performance/security work
+- Sounds ambiguous and you need the authoritative spec before coding
 
-`@/openspec/AGENTS.md` を使用して以下を学習してください:
-- 変更提案の作成と適用方法
-- 仕様のフォーマットと規約
-- プロジェクト構造とガイドライン
+Use `@/openspec/AGENTS.md` to learn:
+- How to create and apply change proposals
+- Spec format and conventions
+- Project structure and guidelines
 
-'openspec update' が説明を更新できるように、この管理ブロックを保持してください。
+Keep this managed block so 'openspec update' can refresh the instructions.
 
 <!-- OPENSPEC:END -->
 
@@ -133,13 +133,8 @@ cp config/sources.example.yml config/sources.yml
 
 #### Summarizer (`lib/tech_news/summarizer.rb`)
 - Claude APIを使用して記事を日本語で要約
-- テンプレートシステムで要約スタイルをカスタマイズ可能
+- `config/sources.yml`のカスタムプロンプト（`system_prompt`と`output_format`）を使用
 - レート制限とリトライ機能を実装
-
-#### SummarizerTemplates (`lib/tech_news/summarizer_templates.rb`)
-- 事前定義された要約テンプレートを管理
-- 5種類のテンプレート（default, concise, detailed, technical, bullet_points）
-- テンプレート取得と検証メソッドを提供
 
 #### Notifier (`lib/tech_news/notifier.rb`)
 - Slack Webhook経由でメッセージ投稿
@@ -212,21 +207,58 @@ cp config/sources.example.yml config/sources.yml
 - `MAX_ARTICLES_PER_SOURCE`: ソースあたりの最大記事数（デフォルト: 5）
 - `TZ`: タイムゾーン設定（GitHub Actionsでは`Asia/Tokyo`を推奨）日付フィルタリングに影響
 
-### 要約テンプレート設定
+### カスタム要約プロンプト設定
 
-`config/sources.yml` の `summarization.template` で要約スタイルを選択できます：
+`config/sources.yml` の `summarization` セクションで、要約プロンプトを完全にカスタマイズできます。
 
-- **default**: 標準形式（2-3文の要約 + 最大3点の箇条書き）
-- **concise**: 超簡潔版（1-2文のみ）
-- **detailed**: 詳細版（4-5文の要約 + 5点程度の箇条書き）
-- **technical**: 技術特化版（アーキテクチャ、技術スタック、パフォーマンスなどに焦点）
-- **bullet_points**: 箇条書きのみ（5-7点）
+#### 基本設定
 
-例：
 ```yaml
 summarization:
-  template: technical  # 技術特化版を使用
+  # システムプロンプト：要約者の役割を定義
+  system_prompt: |
+    あなたは技術ニュースのキュレーターです。
+    以下の記事を日本語で要約してください。
+
+  # 出力フォーマット：要約の形式を指定
+  output_format: |
+    以下の形式で出力してください:
+    - 2-3文の簡潔な要約
+    - 重要なポイント（箇条書き、最大3点）
 ```
+
+#### カスタマイズのベストプラクティス
+
+- **system_prompt**: 要約者の役割やトーン（例: 技術特化、初心者向けなど）を定義
+- **output_format**: 具体的な出力形式を指示（箇条書き、文数、構造など）
+- **プロンプトの長さ**: 各プロンプトは2000文字以内に収める（自動検証あり）
+- **明確な指示**: 曖昧な表現を避け、具体的な形式を指定
+
+#### 旧テンプレートからの移行
+
+以前のバージョンでは `template: bullet_points` のような事前定義テンプレートを使用していましたが、現在は設定ファイルで直接プロンプトを記述する方式に変更されました。
+
+移行例（旧`bullet_points`テンプレート）：
+
+**旧設定**:
+```yaml
+summarization:
+  template: bullet_points
+```
+
+**新設定**:
+```yaml
+summarization:
+  system_prompt: |
+    あなたは技術ニュースのキュレーターです。
+    以下の記事を箇条書き形式で日本語で要約してください。
+  output_format: |
+    以下の形式で出力してください:
+    - 箇条書きのみ（5-7点）
+    - 各項目は簡潔に1文で記述
+```
+
+その他の旧テンプレート（default, concise, detailed, technical）のYAML例は、`config/sources.example.yml` を参照してください。
 
 ---
 

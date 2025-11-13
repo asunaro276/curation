@@ -1,11 +1,10 @@
 # frozen_string_literal: true
 
 require 'anthropic'
-require_relative 'summarizer_templates'
 
 module TechNews
   class Summarizer
-    attr_reader :api_key, :model, :config, :logger, :template
+    attr_reader :api_key, :model, :config, :logger
 
     def initialize(api_key:, config:, logger:, model: nil)
       @api_key = api_key
@@ -14,10 +13,7 @@ module TechNews
       @logger = logger
       @client = Anthropic::Client.new(access_token: api_key)
 
-      # テンプレートを読み込む
-      template_name = config.summarization_template
-      @template = SummarizerTemplates.get_template(template_name)
-      logger.info("Using summarization template: #{template_name}")
+      logger.info('Using custom summarization prompts from configuration')
     end
 
     def summarize(article)
@@ -70,14 +66,14 @@ module TechNews
 
     def build_prompt(article, content)
       <<~PROMPT
-        #{@template[:system_prompt]}
+        #{config.system_prompt}
 
         タイトル: #{article.title}
         URL: #{article.url}
         ソース: #{article.source}
         内容: #{content}
 
-        #{@template[:output_format].strip}
+        #{config.output_format.strip}
 
         要約:
       PROMPT

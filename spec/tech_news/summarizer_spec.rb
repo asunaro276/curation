@@ -8,7 +8,8 @@ RSpec.describe TechNews::Summarizer do
            claude_model: 'claude-3-5-sonnet-20241022',
            max_content_tokens: 4000,
            api_timeout: 30,
-           summarization_template: 'default')
+           system_prompt: 'あなたは技術ニュースのキュレーターです。以下の記事を日本語で要約してください。',
+           output_format: "以下の形式で出力してください:\n- 2-3文の簡潔な要約\n- 重要なポイント（箇条書き、最大3点）")
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
   let(:api_key) { 'test_api_key' }
@@ -45,7 +46,6 @@ RSpec.describe TechNews::Summarizer do
       )
       expect(summarizer.api_key).to eq(api_key)
       expect(summarizer.model).to eq('claude-3-5-sonnet-20241022')
-      expect(summarizer.template[:name]).to eq('default')
     end
 
     it 'allows custom model override' do

@@ -4,24 +4,27 @@ description: Scaffold a new OpenSpec change and validate strictly.
 category: OpenSpec
 tags: [openspec, change]
 ---
+**重要**
+ユーザーに向けて行う全ての出力について、見出しは英語で本文は日本語で行ってください
+
 <!-- OPENSPEC:START -->
-**ガードレール**
-- まず単純で最小限の実装を優先し、明示的に要求されるか明確に必要な場合にのみ複雑さを追加する。
-- 変更を要求された結果に厳密にスコープする。
-- 追加の OpenSpec 規約または明確化が必要な場合は、`openspec/AGENTS.md`（`openspec/` ディレクトリ内にあります—表示されない場合は `ls openspec` または `openspec update` を実行）を参照してください。
-- ファイルを編集する前に、曖昧または不明確な詳細を特定し、必要なフォローアップ質問をしてください。
+**Guardrails**
+- Favor straightforward, minimal implementations first and add complexity only when it is requested or clearly required.
+- Keep changes tightly scoped to the requested outcome.
+- Refer to `openspec/AGENTS.md` (located inside the `openspec/` directory—run `ls openspec` or `openspec update` if you don't see it) if you need additional OpenSpec conventions or clarifications.
+- Identify any vague or ambiguous details and ask the necessary follow-up questions before editing files.
 
-**ステップ**
-1. `openspec/project.md` を確認し、`openspec list` と `openspec list --specs` を実行し、関連するコードまたはドキュメント（例: `rg`/`ls` 経由）を検査して、提案を現在の動作に基づかせる; 明確化が必要なギャップに注意してください。
-2. ユニークな動詞主導の `change-id` を選択し、`openspec/changes/<id>/` 配下に `proposal.md`, `tasks.md`, `design.md`（必要な場合）をスキャフォールドする。
-3. 変更を具体的な capability または要件にマッピングし、複数スコープの取り組みを明確な関係とシーケンスを持つ個別の仕様差分に分割する。
-4. ソリューションが複数のシステムにまたがる場合、新しいパターンを導入する場合、または仕様にコミットする前にトレードオフの議論を必要とする場合は、`design.md` でアーキテクチャの推論をキャプチャする。
-5. `changes/<id>/specs/<capability>/spec.md`（capability ごとに 1 つのフォルダ）に仕様差分を下書きし、`## ADDED|MODIFIED|REMOVED Requirements` を使用し、要件ごとに少なくとも 1 つの `#### Scenario:` を含め、関連する capability を相互参照する。
-6. `tasks.md` を、ユーザーに見える進捗を提供し、検証（テスト、ツール）を含み、依存関係または並列化可能な作業を強調する、小さく検証可能な作業項目の順序付きリストとして下書きする。
-7. `openspec validate <id> --strict` で検証し、提案を共有する前にすべての問題を解決する。
+**Steps**
+1. Review `openspec/project.md`, run `openspec list` and `openspec list --specs`, and inspect related code or docs (e.g., via `rg`/`ls`) to ground the proposal in current behaviour; note any gaps that require clarification.
+2. Choose a unique verb-led `change-id` and scaffold `proposal.md`, `tasks.md`, and `design.md` (when needed) under `openspec/changes/<id>/`.
+3. Map the change into concrete capabilities or requirements, breaking multi-scope efforts into distinct spec deltas with clear relationships and sequencing.
+4. Capture architectural reasoning in `design.md` when the solution spans multiple systems, introduces new patterns, or demands trade-off discussion before committing to specs.
+5. Draft spec deltas in `changes/<id>/specs/<capability>/spec.md` (one folder per capability) using `## ADDED|MODIFIED|REMOVED Requirements` with at least one `#### Scenario:` per requirement and cross-reference related capabilities when relevant.
+6. Draft `tasks.md` as an ordered list of small, verifiable work items that deliver user-visible progress, include validation (tests, tooling), and highlight dependencies or parallelizable work.
+7. Validate with `openspec validate <id> --strict` and resolve every issue before sharing the proposal.
 
-**リファレンス**
-- 検証が失敗した場合は、`openspec show <id> --json --deltas-only` または `openspec show <spec> --type spec` を使用して詳細を検査してください。
-- 新しい要件を書く前に、`rg -n "Requirement:|Scenario:" openspec/specs` で既存の要件を検索してください。
-- 提案が現在の実装の現実と一致するように、`rg <keyword>`, `ls`, または直接ファイル読み取りでコードベースを探索してください。
+**Reference**
+- Use `openspec show <id> --json --deltas-only` or `openspec show <spec> --type spec` to inspect details when validation fails.
+- Search existing requirements with `rg -n "Requirement:|Scenario:" openspec/specs` before writing new ones.
+- Explore the codebase with `rg <keyword>`, `ls`, or direct file reads so proposals align with current implementation realities.
 <!-- OPENSPEC:END -->

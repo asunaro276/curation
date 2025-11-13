@@ -137,68 +137,155 @@ RSpec.describe TechNews::Config do
     end
   end
 
-  describe 'summarization_template' do
-    context 'テンプレートが指定されていない場合' do
-      it 'デフォルトで"default"を返す' do
+  describe 'summarization prompts' do
+    context 'プロンプトが指定されていない場合' do
+      it 'デフォルトのsystem_promptを返す' do
         config = TechNews::Config.new(config_path: config_file.path)
-        expect(config.summarization_template).to eq('default')
+        expect(config.system_prompt).to eq(TechNews::Config::DEFAULT_SYSTEM_PROMPT)
+      end
+
+      it 'デフォルトのoutput_formatを返す' do
+        config = TechNews::Config.new(config_path: config_file.path)
+        expect(config.output_format).to eq(TechNews::Config::DEFAULT_OUTPUT_FORMAT)
       end
     end
 
-    context 'テンプレートが指定されている場合' do
-      let(:config_with_template) do
+    context 'カスタムプロンプトが指定されている場合' do
+      let(:custom_system_prompt) { 'カスタムシステムプロンプト' }
+      let(:custom_output_format) { 'カスタム出力フォーマット' }
+      let(:config_with_prompts) do
         valid_config.merge({
-                             'summarization' => { 'template' => 'concise' }
+                             'summarization' => {
+                               'system_prompt' => custom_system_prompt,
+                               'output_format' => custom_output_format
+                             }
                            })
       end
 
-      let(:config_file_with_template) do
+      let(:config_file_with_prompts) do
         file = Tempfile.new(['sources', '.yml'])
-        file.write(YAML.dump(config_with_template))
+        file.write(YAML.dump(config_with_prompts))
         file.rewind
         file
       end
 
       after do
-        config_file_with_template.close
-        config_file_with_template.unlink
+        config_file_with_prompts.close
+        config_file_with_prompts.unlink
       end
 
-      it '指定されたテンプレートを返す' do
-        config = TechNews::Config.new(config_path: config_file_with_template.path)
-        expect(config.summarization_template).to eq('concise')
+      it '指定されたsystem_promptを返す' do
+        config = TechNews::Config.new(config_path: config_file_with_prompts.path)
+        expect(config.system_prompt).to eq(custom_system_prompt)
+      end
+
+      it '指定されたoutput_formatを返す' do
+        config = TechNews::Config.new(config_path: config_file_with_prompts.path)
+        expect(config.output_format).to eq(custom_output_format)
       end
     end
 
-    context '無効なテンプレート名が指定されている場合' do
-      let(:config_with_invalid_template) do
+    context 'プロンプトが空文字列の場合' do
+      let(:config_with_empty_prompt) do
         valid_config.merge({
-                             'summarization' => { 'template' => 'invalid_template' }
+                             'summarization' => { 'system_prompt' => '' }
                            })
       end
 
-      let(:config_file_with_invalid_template) do
+      let(:config_file_with_empty_prompt) do
         file = Tempfile.new(['sources', '.yml'])
-        file.write(YAML.dump(config_with_invalid_template))
+        file.write(YAML.dump(config_with_empty_prompt))
         file.rewind
         file
       end
 
       after do
-        config_file_with_invalid_template.close
-        config_file_with_invalid_template.unlink
+        config_file_with_empty_prompt.close
+        config_file_with_empty_prompt.unlink
       end
 
       it 'ConfigurationErrorを発生させる' do
         expect do
-          TechNews::Config.new(config_path: config_file_with_invalid_template.path)
-        end.to raise_error(TechNews::Config::ConfigurationError, /Invalid summarization template/)
+          TechNews::Config.new(config_path: config_file_with_empty_prompt.path)
+        end.to raise_error(TechNews::Config::ConfigurationError, /cannot be empty/)
+      end
+    end
+
+    context 'プロンプトが空白のみの場合' do
+      let(:config_with_whitespace_prompt) do
+        valid_config.merge({
+                             'summarization' => { 'output_format' => "   \n  " }
+                           })
       end
 
-      it 'エラーメッセージに利用可能なテンプレートを含む' do
+      let(:config_file_with_whitespace_prompt) do
+        file = Tempfile.new(['sources', '.yml'])
+        file.write(YAML.dump(config_with_whitespace_prompt))
+        file.rewind
+        file
+      end
+
+      after do
+        config_file_with_whitespace_prompt.close
+        config_file_with_whitespace_prompt.unlink
+      end
+
+      it 'ConfigurationErrorを発生させる' do
         expect do
-          TechNews::Config.new(config_path: config_file_with_invalid_template.path)
-        end.to raise_error(TechNews::Config::ConfigurationError, /Available:/)
+          TechNews::Config.new(config_path: config_file_with_whitespace_prompt.path)
+        end.to raise_error(TechNews::Config::ConfigurationError, /cannot be empty/)
+      end
+    end
+
+    context 'プロンプトが最大長を超える場合' do
+      let(:config_with_long_prompt) do
+        valid_config.merge({
+                             'summarization' => { 'system_prompt' => 'a' * 2001 }
+                           })
+      end
+
+      let(:config_file_with_long_prompt) do
+        file = Tempfile.new(['sources', '.yml'])
+        file.write(YAML.dump(config_with_long_prompt))
+        file.rewind
+        file
+      end
+
+      after do
+        config_file_with_long_prompt.close
+        config_file_with_long_prompt.unlink
+      end
+
+      it 'ConfigurationErrorを発生させる' do
+        expect do
+          TechNews::Config.new(config_path: config_file_with_long_prompt.path)
+        end.to raise_error(TechNews::Config::ConfigurationError, /exceeds maximum length/)
+      end
+    end
+
+    context 'プロンプトが文字列でない場合' do
+      let(:config_with_non_string_prompt) do
+        valid_config.merge({
+                             'summarization' => { 'system_prompt' => 123 }
+                           })
+      end
+
+      let(:config_file_with_non_string_prompt) do
+        file = Tempfile.new(['sources', '.yml'])
+        file.write(YAML.dump(config_with_non_string_prompt))
+        file.rewind
+        file
+      end
+
+      after do
+        config_file_with_non_string_prompt.close
+        config_file_with_non_string_prompt.unlink
+      end
+
+      it 'ConfigurationErrorを発生させる' do
+        expect do
+          TechNews::Config.new(config_path: config_file_with_non_string_prompt.path)
+        end.to raise_error(TechNews::Config::ConfigurationError, /must be a string/)
       end
     end
   end

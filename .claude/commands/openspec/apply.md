@@ -4,20 +4,23 @@ description: Implement an approved OpenSpec change and keep tasks in sync.
 category: OpenSpec
 tags: [openspec, apply]
 ---
+**重要**
+ユーザーに向けて行う全ての出力について、見出しは英語で本文は日本語で行ってください
+
 <!-- OPENSPEC:START -->
-**ガードレール**
-- まず単純で最小限の実装を優先し、明示的に要求されるか明確に必要な場合にのみ複雑さを追加する。
-- 変更を要求された結果に厳密にスコープする。
-- 追加の OpenSpec 規約または明確化が必要な場合は、`openspec/AGENTS.md`（`openspec/` ディレクトリ内にあります—表示されない場合は `ls openspec` または `openspec update` を実行）を参照してください。
+**Guardrails**
+- Favor straightforward, minimal implementations first and add complexity only when it is requested or clearly required.
+- Keep changes tightly scoped to the requested outcome.
+- Refer to `openspec/AGENTS.md` (located inside the `openspec/` directory—run `ls openspec` or `openspec update` if you don't see it) if you need additional OpenSpec conventions or clarifications.
 
-**ステップ**
-これらのステップを TODO として追跡し、1 つずつ完了します。
-1. `changes/<id>/proposal.md`, `design.md`（存在する場合）, `tasks.md` を読み、スコープと受け入れ基準を確認する。
-2. タスクを順次処理し、編集を最小限に抑え、要求された変更に焦点を当てる。
-3. ステータスを更新する前に完了を確認する—`tasks.md` のすべての項目が完了していることを確認する。
-4. すべての作業が完了した後にチェックリストを更新し、各タスクが `- [x]` とマークされ、現実を反映するようにする。
-5. 追加のコンテキストが必要な場合は、`openspec list` または `openspec show <item>` を参照する。
+**Steps**
+Track these steps as TODOs and complete them one by one.
+1. Read `changes/<id>/proposal.md`, `design.md` (if present), and `tasks.md` to confirm scope and acceptance criteria.
+2. Work through tasks sequentially, keeping edits minimal and focused on the requested change.
+3. Confirm completion before updating statuses—make sure every item in `tasks.md` is finished.
+4. Update the checklist after all work is done so each task is marked `- [x]` and reflects reality.
+5. Reference `openspec list` or `openspec show <item>` when additional context is required.
 
-**リファレンス**
-- 実装中に提案から追加のコンテキストが必要な場合は、`openspec show <id> --json --deltas-only` を使用してください。
+**Reference**
+- Use `openspec show <id> --json --deltas-only` if you need additional context from the proposal while implementing.
 <!-- OPENSPEC:END -->

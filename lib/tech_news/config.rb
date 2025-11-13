@@ -1,15 +1,25 @@
 # frozen_string_literal: true
 
 require 'yaml'
-require_relative 'summarizer_templates'
 
 module TechNews
   class Config
     class ConfigurationError < StandardError; end
 
+    # デフォルト値の定数定義
+    DEFAULT_SYSTEM_PROMPT = 'あなたは技術ニュースのキュレーターです。以下の記事を日本語で要約してください。'
+    DEFAULT_OUTPUT_FORMAT = <<~FORMAT
+      以下の形式で出力してください:
+      - 2-3文の簡潔な要約
+      - 重要なポイント（箇条書き、最大3点）
+    FORMAT
+
+    # プロンプトの最大長制限（Claude APIの制限を考慮）
+    MAX_PROMPT_LENGTH = 2000
+
     attr_reader :sources, :limits, :slack, :anthropic_api_key, :slack_webhook_url,
                 :log_level, :claude_model, :line_channel_access_token, :line_target_id,
-                :enabled_notifiers, :summarization_template
+                :enabled_notifiers, :system_prompt, :output_format
 
     def initialize(config_path: 'config/sources.yml')
       @config_path = config_path
@@ -58,7 +68,8 @@ module TechNews
 
       # Load summarization settings
       summarization = config['summarization'] || {}
-      @summarization_template = summarization['template'] || 'default'
+      @system_prompt = summarization['system_prompt'] || DEFAULT_SYSTEM_PROMPT
+      @output_format = summarization['output_format'] || DEFAULT_OUTPUT_FORMAT
     rescue Psych::SyntaxError => e
       raise ConfigurationError, "Invalid YAML in configuration file: #{e.message}"
     end
@@ -113,12 +124,31 @@ module TechNews
         errors << "Source #{index}: 'enabled' must be a boolean" unless [true, false].include?(source['enabled'])
       end
 
-      # Validate summarization template
-      unless SummarizerTemplates.template_exists?(@summarization_template)
-        errors << "Invalid summarization template '#{@summarization_template}'. Available: #{SummarizerTemplates.available_templates.join(', ')}"
-      end
+      # Validate summarization prompts
+      errors.concat(validate_prompt('system_prompt', @system_prompt))
+      errors.concat(validate_prompt('output_format', @output_format))
 
       raise ConfigurationError, "Configuration validation failed:\n  - #{errors.join("\n  - ")}" unless errors.empty?
+    end
+
+    def validate_prompt(field_name, value)
+      errors = []
+
+      # 文字列であることを確認
+      unless value.is_a?(String)
+        errors << "#{field_name} must be a string"
+        return errors
+      end
+
+      # 空文字列でないことを確認（空白のみもNG）
+      errors << "#{field_name} cannot be empty or contain only whitespace" if value.strip.empty?
+
+      # 最大長チェック
+      if value.length > MAX_PROMPT_LENGTH
+        errors << "#{field_name} exceeds maximum length of #{MAX_PROMPT_LENGTH} characters (current: #{value.length})"
+      end
+
+      errors
     end
   end
 end

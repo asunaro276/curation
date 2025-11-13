@@ -1,59 +1,6 @@
-# Capability: コンテンツ要約 (content-summarization)
+# content-summarization Spec Delta
 
-## Purpose
-Claude APIを使用して収集した記事を日本語で要約し、読みやすい形式に整形する機能。記事の主要なポイントを抽出し、一貫したフォーマットで提供します。
-## Requirements
-### Requirement: Claude API統合
-Claude APIを使用して記事テキストを要約できなければならない (MUST)。
-
-#### Scenario: 記事の要約生成
-**Given** 記事のタイトルと本文が提供されている
-**When** 要約リクエストが送信される
-**Then** Claude APIから200-300文字程度の要約が返される
-**And** 要約は記事の主要なポイントを含む
-**And** 日本語で生成される
-
-#### Scenario: API認証の処理
-**Given** 環境変数 `ANTHROPIC_API_KEY` が設定されている
-**When** Claude APIにリクエストする
-**Then** 認証が正常に行われる
-**And** 401エラーが発生しない
-
-### Requirement: トークン数の制限
-コスト管理のため、APIリクエストのトークン数を制限できなければならない (MUST)。
-
-#### Scenario: 長文記事の切り詰め
-**Given** 非常に長い記事（10,000文字以上）が入力される
-**When** 要約処理が実行される
-**Then** 入力テキストは設定された最大トークン数（例: 4000トークン）以内に切り詰められる
-**And** Claude APIに送信される前に制限が適用される
-
-### Requirement: バッチ処理サポート
-複数の記事を効率的に処理できなければならない (MUST)。
-
-#### Scenario: 複数記事の一括要約
-**Given** 10件の記事が収集されている
-**When** バッチ要約処理が実行される
-**Then** 各記事が順次要約される
-**And** 各要約の間に適切な待機時間が設定される（レート制限対策）
-**And** 全ての要約結果が返される
-
-### Requirement: エラーハンドリングとリトライ
-API障害時に適切に対応し、一時的なエラーの場合はリトライしなければならない (MUST)。
-
-#### Scenario: 一時的なAPI障害からの回復
-**Given** Claude APIが一時的に503エラーを返す
-**When** 要約リクエストが失敗する
-**Then** 最大3回までリトライされる
-**And** リトライ間には指数バックオフが適用される
-**And** 全てのリトライが失敗した場合はエラーが記録され、処理は継続される
-
-#### Scenario: トークンリミット超過の処理
-**Given** 記事が極端に長く、切り詰めても制限を超える
-**When** Claude APIから400エラーが返される
-**Then** エラーがログに記録される
-**And** その記事はスキップされる
-**And** 次の記事の処理が継続される
+## MODIFIED Requirements
 
 ### Requirement: 要約品質の一貫性
 要約は一貫したフォーマットと品質で生成されなければならない (MUST)。プロンプトは`config/sources.yml`の`summarization.system_prompt`と`summarization.output_format`で完全にカスタマイズ可能でなければならない (MUST)。
@@ -92,6 +39,8 @@ summarization:
 **Then** カスタム`system_prompt`が使用される
 **And** デフォルトの`output_format`が使用される
 **And** 両者が正しく組み合わされたプロンプトが生成される
+
+## ADDED Requirements
 
 ### Requirement: カスタムプロンプト設定の検証
 `config/sources.yml`で指定されたカスタムプロンプトは、起動時にバリデーションされなければならない (MUST)。
@@ -154,7 +103,3 @@ summarization:
 **When** `./bin/run --dry-run` を実行する
 **Then** 標準出力に「Custom prompts configured」が表示される
 **And** プロンプトの先頭50文字程度がプレビュー表示される
-
-## 関連Capability
-- `news-collection`: 収集された記事データを入力として受け取る
-- `slack-notification`: 生成された要約をSlack投稿に渡す

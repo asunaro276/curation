@@ -140,10 +140,16 @@ slack:
 
 # Summarization configuration
 summarization:
-  # Template for summarization (default, concise, detailed, technical, bullet_points)
-  # - default: 標準形式（2-3文の要約 + 最大3点の箇条書き）
-  # - concise: 超簡潔版（1-2文のみ）
-  # - detailed: 詳細版（4-5文の要約 + 5点程度の箇条書き）
-  # - technical: 技術特化版（アーキテクチャ、技術スタック、パフォーマンスなどに焦点）
-  # - bullet_points: 箇条書きのみ（5-7点）
-  template: bullet_points
+  # Custom prompts for article summarization
+  # カスタムプロンプトで要約スタイルを完全にカスタマイズ可能
+
+  # システムプロンプト：要約者の役割を定義
+  system_prompt: |
+    あなたは技術ニュースのキュレーターです。
+    以下の記事を箇条書き形式で日本語で要約してください。
+
+  # 出力フォーマット：要約の形式を指定
+  output_format: |
+    以下の形式で出力してください:
+    - 箇条書きのみ（5-7点）
+    - 各項目は簡潔に1文で記述

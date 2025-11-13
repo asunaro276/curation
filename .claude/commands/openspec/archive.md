@@ -4,24 +4,27 @@ description: Archive a deployed OpenSpec change and update specs.
 category: OpenSpec
 tags: [openspec, archive]
 ---
+**重要**
+ユーザーに向けて行う全ての出力について、見出しは英語で本文は日本語で行ってください
+
 <!-- OPENSPEC:START -->
-**ガードレール**
-- まず単純で最小限の実装を優先し、明示的に要求されるか明確に必要な場合にのみ複雑さを追加する。
-- 変更を要求された結果に厳密にスコープする。
-- 追加の OpenSpec 規約または明確化が必要な場合は、`openspec/AGENTS.md`（`openspec/` ディレクトリ内にあります—表示されない場合は `ls openspec` または `openspec update` を実行）を参照してください。
+**Guardrails**
+- Favor straightforward, minimal implementations first and add complexity only when it is requested or clearly required.
+- Keep changes tightly scoped to the requested outcome.
+- Refer to `openspec/AGENTS.md` (located inside the `openspec/` directory—run `ls openspec` or `openspec update` if you don't see it) if you need additional OpenSpec conventions or clarifications.
 
-**ステップ**
-1. アーカイブする変更 ID を決定する:
-   - このプロンプトにすでに特定の変更 ID が含まれている場合（例: スラッシュコマンド引数によって入力された `<ChangeId>` ブロック内）、空白をトリミングした後にその値を使用します。
-   - 会話が変更を緩く参照している場合（例: タイトルまたは要約による）、`openspec list` を実行して可能性のある ID を表示し、関連する候補を共有し、ユーザーがどれを意図しているかを確認します。
-   - それ以外の場合は、会話を確認し、`openspec list` を実行し、ユーザーにどの変更をアーカイブするかを尋ねます; 進む前に確認された変更 ID を待ちます。
-   - 単一の変更 ID をまだ特定できない場合は、停止してユーザーにまだ何もアーカイブできないことを伝えます。
-2. `openspec list`（または `openspec show <id>`）を実行して変更 ID を検証し、変更が欠落している場合、すでにアーカイブされている場合、またはアーカイブの準備ができていない場合は停止します。
-3. `openspec archive <id> --yes` を実行して、CLI が変更を移動し、プロンプトなしで仕様更新を適用するようにします（ツール専用の作業の場合のみ `--skip-specs` を使用）。
-4. コマンド出力を確認して、ターゲット仕様が更新され、変更が `changes/archive/` に到達したことを確認します。
-5. `openspec validate --strict` で検証し、何かおかしい場合は `openspec show <id>` で検査します。
+**Steps**
+1. Determine the change ID to archive:
+   - If this prompt already includes a specific change ID (for example inside a `<ChangeId>` block populated by slash-command arguments), use that value after trimming whitespace.
+   - If the conversation references a change loosely (for example by title or summary), run `openspec list` to surface likely IDs, share the relevant candidates, and confirm which one the user intends.
+   - Otherwise, review the conversation, run `openspec list`, and ask the user which change to archive; wait for a confirmed change ID before proceeding.
+   - If you still cannot identify a single change ID, stop and tell the user you cannot archive anything yet.
+2. Validate the change ID by running `openspec list` (or `openspec show <id>`) and stop if the change is missing, already archived, or otherwise not ready to archive.
+3. Run `openspec archive <id> --yes` so the CLI moves the change and applies spec updates without prompts (use `--skip-specs` only for tooling-only work).
+4. Review the command output to confirm the target specs were updated and the change landed in `changes/archive/`.
+5. Validate with `openspec validate --strict` and inspect with `openspec show <id>` if anything looks off.
 
-**リファレンス**
-- アーカイブする前に `openspec list` を使用して変更 ID を確認してください。
-- `openspec list --specs` で更新された仕様を検査し、引き渡す前に検証の問題に対処してください。
+**Reference**
+- Use `openspec list` to confirm change IDs before archiving.
+- Inspect refreshed specs with `openspec list --specs` and address any validation issues before handing off.
 <!-- OPENSPEC:END -->
