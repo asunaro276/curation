@@ -47,7 +47,9 @@ Orchestrator (lib/tech_news/orchestrator.rb)
     ↓
 ├── Collector (lib/tech_news/collectors/)
 │   ├── RSSCollector - RSSフィードから記事収集
+│   │   └── 前日の記事のみを日付でフィルタリング
 │   └── GitHubTrendingCollector - GitHub Trendingから収集
+│       └── 前日の記事として扱う
 │
 ├── Summarizer (lib/tech_news/summarizer.rb)
 │   └── Claude APIで記事を日本語要約
@@ -55,6 +57,12 @@ Orchestrator (lib/tech_news/orchestrator.rb)
 └── Notifier (lib/tech_news/notifier.rb)
     └── Slackに投稿（Block Kit形式）
 ```
+
+### 日付フィルタリング機能
+- **前日の記事のみを収集**: システムは前日（0時0分0秒〜23時59分59秒）に公開された記事のみを収集します
+- **タイムゾーン**: GitHub Actionsの実行環境では`TZ=Asia/Tokyo`を設定し、日本時間（JST）で動作します
+- **公開日時がない記事**: フィルタリング時に除外され、警告ログが記録されます
+- **GitHub Trending**: 公開日時が取得できないため、前日の正午として扱われます
 
 ---
 
@@ -202,6 +210,7 @@ cp config/sources.example.yml config/sources.yml
 - `LOG_LEVEL`: ログレベル（DEBUG, INFO, WARN, ERROR）デフォルト: INFO
 - `CLAUDE_MODEL`: 使用するClaudeモデル（デフォルト: claude-3-5-sonnet-20241022）
 - `MAX_ARTICLES_PER_SOURCE`: ソースあたりの最大記事数（デフォルト: 5）
+- `TZ`: タイムゾーン設定（GitHub Actionsでは`Asia/Tokyo`を推奨）日付フィルタリングに影響
 
 ### 要約テンプレート設定
 

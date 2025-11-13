@@ -17,6 +17,11 @@ RSpec.describe TechNews::Orchestrator do
     file
   end
 
+  let(:yesterday) do
+    now = Time.new(2025, 1, 15, 12, 0, 0)
+    now - 86_400 # 前日
+  end
+
   let(:sample_rss) do
     <<~RSS
       <?xml version="1.0" encoding="UTF-8"?>
@@ -26,6 +31,7 @@ RSpec.describe TechNews::Orchestrator do
           <item>
             <title>Test Article</title>
             <link>https://example.com/article</link>
+            <pubDate>#{yesterday.rfc2822}</pubDate>
             <description>Test description</description>
           </item>
         </channel>
@@ -34,6 +40,10 @@ RSpec.describe TechNews::Orchestrator do
   end
 
   before do
+    # 時刻を固定して日付フィルタリングをテスト可能にする
+    freeze_time = Time.new(2025, 1, 15, 12, 0, 0)
+    allow(Time).to receive(:now).and_return(freeze_time)
+
     ENV['ANTHROPIC_API_KEY'] = 'test_api_key'
     ENV['SLACK_WEBHOOK_URL'] = 'https://hooks.slack.com/services/T00/B00/XX'
   end

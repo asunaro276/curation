@@ -146,4 +146,4 @@ summarization:
   # - detailed: 詳細版（4-5文の要約 + 5点程度の箇条書き）
   # - technical: 技術特化版（アーキテクチャ、技術スタック、パフォーマンスなどに焦点）
   # - bullet_points: 箇条書きのみ（5-7点）
-  template: default
+  template: bullet_points

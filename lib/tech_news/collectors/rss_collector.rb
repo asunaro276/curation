@@ -24,6 +24,7 @@ module TechNews
         raise ParseError, 'Failed to parse RSS feed' unless feed
 
         articles = extract_articles(feed)
+        articles = filter_by_date(articles)
         limit_articles(articles)
       rescue RSS::Error => e
         raise ParseError, "RSS parsing error: #{e.message}"

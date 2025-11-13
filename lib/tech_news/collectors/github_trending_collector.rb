@@ -24,6 +24,7 @@ module TechNews
       def parse(html_data)
         doc = Nokogiri::HTML(html_data)
         articles = extract_repositories(doc)
+        articles = filter_by_date(articles)
         limit_articles(articles)
       rescue StandardError => e
         raise ParseError, "Failed to parse GitHub Trending: #{e.message}"
@@ -79,7 +80,7 @@ module TechNews
         Models::Article.new(
           title: "#{repo_name} - GitHub Trending",
           url: repo_url,
-          published_at: Time.now, # GitHub Trending doesn't provide publish date
+          published_at: yesterday_date, # GitHub Trendingは前日の日付を使用
           description: description,
           source: name,
           metadata: {
@@ -89,6 +90,14 @@ module TechNews
             repository: repo_name
           }
         )
+      end
+
+      # GitHub Trendingの記事用に前日の正午の時刻を返す
+      # @return [Time] 前日の正午
+      def yesterday_date
+        now = Time.now
+        yesterday = now - 86_400 # 1日前
+        Time.new(yesterday.year, yesterday.month, yesterday.day, 12, 0, 0)
       end
     end
   end

@@ -58,6 +58,15 @@ RSpec.describe TechNews::Collectors::GithubTrendingCollector do
   end
 
   describe '#collect' do
+    before do
+      # 時刻を固定して日付フィルタリングをテスト可能にする
+      # GitHub Trendingは`published_at: Time.now`を使用する
+      # calculate_yesterday_rangeメソッドは現在時刻から前日を計算するため、
+      # Time.nowは2025/1/15に設定し、published_atも同日にする必要がある
+      freeze_time = Time.new(2025, 1, 15, 12, 0, 0)
+      allow(Time).to receive(:now).and_return(freeze_time)
+    end
+
     it 'fetches and parses trending repositories' do
       stub_request(:get, 'https://github.com/trending')
         .to_return(status: 200, body: sample_html)

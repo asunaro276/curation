@@ -10,6 +10,11 @@ RSpec.describe TechNews::Collectors::RssCollector do
   end
   let(:logger) { TechNews::AppLogger.new(level: 'ERROR') }
 
+  let(:yesterday) do
+    now = Time.new(2025, 1, 15, 12, 0, 0)
+    now - 86_400 # 前日
+  end
+
   let(:sample_rss) do
     <<~RSS
       <?xml version="1.0" encoding="UTF-8"?>
@@ -21,13 +26,13 @@ RSpec.describe TechNews::Collectors::RssCollector do
           <item>
             <title>Test Article 1</title>
             <link>https://example.com/article1</link>
-            <pubDate>Mon, 01 Jan 2024 10:00:00 GMT</pubDate>
+            <pubDate>#{yesterday.rfc2822}</pubDate>
             <description>This is a test article</description>
           </item>
           <item>
             <title>Test Article 2</title>
             <link>https://example.com/article2</link>
-            <pubDate>Mon, 01 Jan 2024 11:00:00 GMT</pubDate>
+            <pubDate>#{(yesterday + 3600).rfc2822}</pubDate>
             <description><![CDATA[<p>Article with <strong>HTML</strong></p>]]></description>
           </item>
         </channel>
@@ -59,6 +64,12 @@ RSpec.describe TechNews::Collectors::RssCollector do
   end
 
   describe '#collect' do
+    before do
+      # 時刻を固定して日付フィルタリングをテスト可能にする
+      freeze_time = Time.new(2025, 1, 15, 12, 0, 0)
+      allow(Time).to receive(:now).and_return(freeze_time)
+    end
+
     it 'fetches and parses RSS feed' do
       stub_request(:get, 'https://example.com/rss')
         .to_return(status: 200, body: sample_rss)
@@ -94,12 +105,14 @@ RSpec.describe TechNews::Collectors::RssCollector do
     end
 
     it 'limits articles based on config' do
-      # Create RSS with 10 articles
+      # Create RSS with 10 articles (all from yesterday)
       many_items = (1..10).map do |i|
+        pub_date = (yesterday + (i * 600)).rfc2822 # 10分ずつずらす
         <<~ITEM
           <item>
             <title>Article #{i}</title>
             <link>https://example.com/article#{i}</link>
+            <pubDate>#{pub_date}</pubDate>
           </item>
         ITEM
       end.join
